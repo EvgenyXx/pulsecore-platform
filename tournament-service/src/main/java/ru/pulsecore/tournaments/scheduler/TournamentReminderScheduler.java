@@ -1,0 +1,102 @@
+package ru.pulsecore.tournaments.scheduler;
+
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+import ru.pulsecore.shared.config.constants.KafkaTopics;
+
+import ru.pulsecore.shared.dto.event.PushNotificationEvent;
+import ru.pulsecore.tournaments.event.KafkaPublisher;
+import ru.pulsecore.tournaments.persistence.entity.PlayerNotification;
+import ru.pulsecore.tournaments.persistence.repository.PlayerNotificationRepository;
+import ru.pulsecore.tournaments.service.notification.NotificationPermissionService;
+import ru.pulsecore.tournaments.validator.PushMessageBuilder;
+
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class TournamentReminderScheduler {
+
+    private final PlayerNotificationRepository notificationRepository;
+    private final KafkaPublisher kafkaPublisher;
+    private final NotificationPermissionService notificationPermissionService;
+
+    @Scheduled(fixedRate = 60000)
+    @Transactional
+    public void sendTournamentReminders() {
+        List<PlayerNotification> pending = notificationRepository.findPendingWithTournament();
+        LocalDate today = LocalDate.now();
+        LocalDate tomorrow = today.plusDays(1);
+        LocalTime now = LocalTime.now().withSecond(0).withNano(0);
+
+        pending.forEach(pn -> processNotification(pn, today, tomorrow, now));
+    }
+
+    private void processNotification(PlayerNotification pn, LocalDate today, LocalDate tomorrow, LocalTime now) {
+        var tournament = pn.getTournament();
+        if (tournament == null || tournament.getDate() == null) return;
+
+        if (tournament.getDate().equals(today)) {
+            sendHourReminder(pn, now);
+        }
+        if (tournament.getDate().equals(tomorrow)) {
+            sendEveningReminder(pn, now);
+        }
+    }
+
+    private void sendHourReminder(PlayerNotification pn, LocalTime now) {
+        String time = pn.getTournament().getTime();
+        if (time == null || time.isEmpty()) return;
+
+        Long minutes = parseMinutesUntil(time, now);
+        if (minutes == null || minutes <= 0 || minutes > 60) return;
+
+        pushHourNotification(pn, time, minutes);
+        pn.setPushReminderSent(true);
+        notificationRepository.save(pn);
+    }
+
+    private Long parseMinutesUntil(String time, LocalTime now) {
+        try {
+            LocalTime tournamentTime = LocalTime.parse(time, DateTimeFormatter.ofPattern("HH:mm"));
+            return java.time.Duration.between(now, tournamentTime).toMinutes();
+        } catch (Exception e) {
+            log.warn("Ошибка парсинга времени турнира: {}", time);
+            return null;
+        }
+    }
+
+    private void pushHourNotification(PlayerNotification pn, String time, long minutes) {
+        if (!notificationPermissionService.canSendPush(pn.getPlayerId())) return;
+        kafkaPublisher.publish(KafkaTopics.PUSH_NOTIFICATION,new PushNotificationEvent(
+                pn.getPlayerId(),
+                "🏆 Турнир начинается!",
+                PushMessageBuilder.buildHourReminderBody(time, minutes),
+                "/dashboard"
+        ));
+    }
+
+    private void sendEveningReminder(PlayerNotification pn, LocalTime now) {
+        if (now.getHour() != 20 || pn.isPushEveningSent()) return;
+
+        if (notificationPermissionService.canSendPush(pn.getPlayerId())) {
+            String time = pn.getTournament().getTime();
+            kafkaPublisher.publish(KafkaTopics.PUSH_NOTIFICATION,new PushNotificationEvent(
+                    pn.getPlayerId(),
+                    "📅 Завтра турнир!",
+                    PushMessageBuilder.buildEveningReminderBody(time),
+                    "/dashboard"
+            ));
+        }
+        pn.setPushEveningSent(true);
+        notificationRepository.save(pn);
+    }
+}

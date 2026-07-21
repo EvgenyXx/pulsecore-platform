@@ -1,0 +1,73 @@
+server:
+  port: 9000
+
+spring:
+  application:
+    name: gateway-service
+  cloud:
+    compatibility-verifier:
+      enabled: false
+    gateway:
+      routes:
+        # Статика
+        - id: static
+          uri: lb://user-service
+          predicates:
+            - Path=/, /index.html, /register.html, /dashboard.html, /profile.html,
+              /subscribe.html, /admin.html, /analytics.html, /oauth-finish.html,
+              /live.html, /live-tournament.html, /css/**, /js/**, /img.png, /favicon.ico,
+              /manifest.json, /robots.txt, /sw.js, /push.js
+
+        # Страницы
+        - id: pages
+          uri: lb://user-service
+          predicates:
+            - Path=/dashboard, /profile, /subscribe, /admin, /analytics, /live, /live-tournament, /oauth-finish, /register
+
+        # OAuth
+        - id: user-service-oauth
+          uri: lb://user-service
+          predicates:
+            - Path=/login/**, /oauth2/**
+
+        # User-service API
+        - id: user-service-api
+          uri: lb://user-service
+          predicates:
+            - Path=/api/player/**, /api/auth/**, /api/push/**, /api/players, /api/shared/**, /online/**
+
+        # Tournament-service
+        - id: tournament-service
+          uri: lb://tournament-service
+          predicates:
+            - Path=/api/tournaments/**, /api/tournament/**, /api/lineups/**, /api/live/**, /api/online/**
+
+        # Notification-service
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/internal/notification/**
+
+        # Payment-service
+        - id: payment-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/prices/**, /api/payment/**, /api/pay/**
+
+        # Admin-service
+        - id: admin-service
+          uri: lb://admin-service
+          predicates:
+            - Path=/api/admin/**
+
+eureka:
+  instance:
+    preferIpAddress: true
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka
+
+logging:
+  level:
+    org.springframework.cloud.gateway: TRACE
+    reactor.netty: TRACE

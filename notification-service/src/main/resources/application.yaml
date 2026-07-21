@@ -1,0 +1,71 @@
+spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: notification-service
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: ru.pulsecore.shared.dto.event,ru.pulsecore.shared.context,ru.pulsecore.shared.dto
+  application:
+    name: notification-service
+
+  cloud:
+    discovery:
+      enabled: true
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/botdb
+    username: botuser
+    password: 1234
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+  flyway:
+    enabled: false
+
+  mail:
+    host: smtp.yandex.ru
+    port: 465
+    username: pulsecore@yandex.ru
+    password: alhxsixgscelcnfp
+    protocol: smtps
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: redispass
+
+server:
+  port: 8083
+
+eureka:
+  instance:
+    preferIpAddress: true
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka
+
+logging:
+  level:
+    ru.pulsecore: DEBUG
+    org.apache.kafka.clients.producer.ProducerConfig: WARN
+    org.apache.kafka.clients.consumer.ConsumerConfig: WARN
+    org.apache.kafka.clients.admin.AdminClientConfig: WARN
+
+
+app:
+  mail:
+    from: pulsecore@yandex.ru
+
+
+

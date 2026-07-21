@@ -1,0 +1,42 @@
+spring:
+  application:
+    name: payment-service
+
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/botdb
+    username: botuser
+    password: 1234
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka
+
+server:
+  port: 8084
+
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+
+app:
+  admin:
+    email: evgenypavlov666@yandex.ru
+
+

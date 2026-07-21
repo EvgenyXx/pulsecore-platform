@@ -1,0 +1,33 @@
+package ru.pulsecore.notification_service.service.mail;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+
+import ru.pulsecore.notification_service.exception.MailStrategyNotFoundException;
+import ru.pulsecore.shared.context.MailContext;
+
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@Slf4j
+@Component
+public class MailStrategyRegistry {
+
+    private final Map<String, MailStrategy> strategies;
+
+    public MailStrategyRegistry(List<MailStrategy> strategyList) {
+        this.strategies = strategyList.stream()
+                .collect(Collectors.toMap(MailStrategy::getType, s -> s));
+    }
+
+    public void send(String type, MailContext ctx) {
+        MailStrategy strategy = strategies.get(type);
+        if (strategy == null) {
+            throw new MailStrategyNotFoundException(type);
+        }
+        strategy.send(ctx);
+
+    }
+}

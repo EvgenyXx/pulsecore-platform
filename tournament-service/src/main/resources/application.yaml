@@ -1,0 +1,85 @@
+spring:
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: tournament-service
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: ru.pulsecore.shared.dto.event,ru.pulsecore.shared.context,ru.pulsecore.shared.dto
+
+  application:
+    name: tournament-service
+
+  cloud:
+    discovery:
+      enabled: true
+    loadbalancer:
+      retry:
+        enabled: false
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/botdb
+    username: botuser
+    password: 1234
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+  flyway:
+    enabled: false
+  cache:
+    type: redis
+    redis:
+      time-to-live: 2h
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: redispass
+
+jwt:
+  public-key-location: classpath:public.pem
+
+eureka:
+  instance:
+    preferIpAddress: true
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+
+server:
+  port: 8082
+
+logging:
+  level:
+    ru.pulsecore: INFO
+    ru.pulsecore.tournaments.client: WARN
+    ru.pulsecore.tournaments.service.parser: WARN
+    org.springframework.kafka: INFO
+    org.apache.kafka.clients.producer.ProducerConfig: WARN
+    org.apache.kafka.clients.consumer.ConsumerConfig: WARN
+    org.apache.kafka.clients.admin.AdminClientConfig: WARN
+
+
+
+
+app:
+  masters-api:
+    url: https://masters-league.com/wp-admin/admin-ajax.php
+    method: POST
+    user-agent: Mozilla/5.0
+    action: tourslist
+    country: RUS
+    timeout: 45000

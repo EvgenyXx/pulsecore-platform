@@ -1,0 +1,251 @@
+import { API, setAccessToken } from './core/api.js';
+import { state } from './core/state.js';
+import { capitalizeName } from './core/utils.js';
+import { loadDashboardWidgets, goHome, highlightNav } from './modules/dashboard.js';
+import { loadTopWeekPreview, toggleTopWeek, switchLeague, switchPeriod, loadTopWeek } from './modules/top.js';
+import { loadSelectedHalls, loadHallsContent, switchHallsDate, toggleAllHalls, toggleHallsCheckboxes, saveSelectedHalls } from './modules/lineup.js';
+import { executeSum, openEditTournamentModal, closeEditTournamentModal, saveTournamentEdit, changePage } from './modules/sum.js';
+
+window.goHome = goHome;
+window.showAction = showAction;
+window.toggleTopWeek = toggleTopWeek;
+window.switchLeague = switchLeague;
+window.switchPeriod = switchPeriod;
+window.executeSum = executeSum;
+window.openEditTournamentModal = openEditTournamentModal;
+window.closeEditTournamentModal = closeEditTournamentModal;
+window.saveTournamentEdit = saveTournamentEdit;
+window.changePage = changePage;
+window.switchHallsDate = switchHallsDate;
+window.toggleAllHalls = toggleAllHalls;
+window.toggleHallsCheckboxes = toggleHallsCheckboxes;
+window.saveSelectedHalls = saveSelectedHalls;
+window.logout = logout;
+window.toggleTheme = toggleTheme;
+
+document.body.insertAdjacentHTML('afterbegin', '<div id="appLoader" style="position:fixed;inset:0;background:#0a0a0a;z-index:9999;display:flex;align-items:center;justify-content:center;"><div class="spinner"></div></div>');
+
+const subBlockHtml = () => `<div class="widget-card rounded-2xl p-8 text-center" style="animation: fadeIn 0.2s ease">
+    <div class="w-14 h-14 rounded-full bg-indigo-500/10 flex items-center justify-center mx-auto mb-4">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    </div>
+    <h3 class="text-lg font-bold text-white mb-2">Требуется подписка</h3>
+    <p class="text-zinc-400 text-sm mb-4">Оформите подписку чтобы открыть все функции</p>
+    <a href="/subscribe" class="inline-block bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl px-6 py-3 text-sm transition-all">Оформить подписку</a>
+</div>`;
+
+function showAction(action) {
+    const homePage = document.getElementById('homePage');
+    const actionPage = document.getElementById('actionPage');
+    const content = document.getElementById('actionContent');
+    const title = document.getElementById('actionTitle');
+    const subtitle = document.getElementById('actionSubtitle');
+    const burgerBtn = `<button onclick="toggleMobileMenu()" class="md:hidden w-9 h-9 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 active:scale-90 text-white ml-auto">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>`;
+    highlightNav('nav-' + action);
+    if (homePage.style.display !== 'none') {
+        homePage.style.transition = 'opacity 0.12s ease';
+        homePage.style.opacity = '0';
+        setTimeout(() => {
+            homePage.style.display = 'none';
+            actionPage.classList.remove('hidden');
+            actionPage.style.opacity = '0';
+            actionPage.style.transition = 'opacity 0.12s ease';
+            requestAnimationFrame(() => { actionPage.style.opacity = '1'; });
+        }, 120);
+    } else {
+        actionPage.classList.remove('hidden');
+        actionPage.style.opacity = '1';
+    }
+    if (action === 'halls') {
+        title.innerHTML = 'Расписание турниров' + burgerBtn;
+        subtitle.textContent = 'Составы по выбранным залам';
+        fetch('/api/player/halls', { credentials: 'same-origin' })
+            .then(r => { if (r.status === 402) { content.innerHTML = subBlockHtml(); return; } loadHallsContent(); });
+    } else if (action === 'sum') {
+        title.innerHTML = '💰 Сумма за период' + burgerBtn;
+        subtitle.textContent = 'Подсчёт заработка и список турниров';
+        state.currentSumPage = 0;
+        content.innerHTML = `
+            <div id="sumButtons" class="space-y-3">
+                <button onclick="showSumCalculator()" class="btn-gold w-full py-4 text-base font-semibold">Посмотреть в приложении</button>
+                <button onclick="showReportForm()" class="btn-gold w-full py-4 text-base font-semibold">Заказать отчёт на почту</button>
+            </div>
+            <div id="sumCalculator" class="hidden mt-4"></div>
+            <p id="sumError" class="text-red-400 text-xs mt-3 hidden"></p>
+            <div id="actionResult" class="mt-4"></div>`;
+    }
+}
+
+window.showSumCalculator = function() {
+    document.getElementById('sumButtons').classList.add('hidden');
+    document.getElementById('actionResult').innerHTML = '';
+    const calc = document.getElementById('sumCalculator');
+    calc.classList.remove('hidden');
+    calc.innerHTML = `
+        <button onclick="backToSumButtons()" class="flex items-center gap-2 text-zinc-400 hover:text-white text-sm mb-4 transition-colors">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg> Назад
+        </button>
+        <div class="widget-card rounded-2xl p-4 mb-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                <div><label class="text-xs text-zinc-400 mb-1 block">Дата с</label><input id="dateStart" type="text" class="flatpickr-input" placeholder="Выберите дату"></div>
+                <div><label class="text-xs text-zinc-400 mb-1 block">Дата по</label><input id="dateEnd" type="text" class="flatpickr-input" placeholder="Выберите дату"></div>
+            </div>
+            <button onclick="executeSum()" class="btn-gold w-full">Рассчитать</button>
+        </div>`;
+    flatpickr('#dateStart', { locale: 'ru', dateFormat: 'Y-m-d', maxDate: 'today' });
+    flatpickr('#dateEnd', { locale: 'ru', dateFormat: 'Y-m-d', maxDate: 'today' });
+};
+
+window.showReportForm = function() {
+    document.getElementById('sumButtons').classList.add('hidden');
+    document.getElementById('actionResult').innerHTML = '';
+    import('/js/modules/scheduled-report.js').then(m => {
+        const calc = document.getElementById('sumCalculator');
+        if (calc) calc.classList.add('hidden');
+        document.getElementById('actionResult').innerHTML = `
+            <button onclick="backToSumButtons()" class="flex items-center gap-2 text-zinc-400 hover:text-white text-sm mb-4 transition-colors">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg> Назад
+            </button>` + m.renderReportForm();
+        flatpickr('#reportDateStart', { locale: 'ru', dateFormat: 'Y-m-d' });
+        flatpickr('#reportDateEnd', { locale: 'ru', dateFormat: 'Y-m-d' });
+        flatpickr('#reportScheduledDate', { locale: 'ru', dateFormat: 'Y-m-d', minDate: 'today' });
+    });
+};
+
+window.backToSumButtons = function() {
+    document.getElementById('sumButtons').classList.remove('hidden');
+    document.getElementById('sumCalculator').classList.add('hidden');
+    document.getElementById('actionResult').innerHTML = '';
+};
+
+async function logout() { await API.logout(); window.location.replace('/'); }
+
+function toggleTheme() {
+    const html = document.documentElement;
+    const current = html.getAttribute('data-theme') || 'dark';
+    const next = current === 'dark' ? 'ocean' : 'dark';
+    html.setAttribute('data-theme', next);
+    fetch('/api/auth/me/theme', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ theme: next }) }).catch(() => {});
+}
+
+async function checkPushStatus() {
+    const container = document.getElementById('pushToggleContainer');
+    if (container) container.style.display = 'none';
+    try {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        if (sub) { if (container) container.remove(); }
+        else { if (container) { container.classList.remove('hidden'); container.style.display = ''; } }
+    } catch(e) {
+        if (container) { container.classList.remove('hidden'); container.style.display = ''; }
+    }
+}
+window.checkPushStatus = checkPushStatus;
+
+async function togglePush() {
+    const toggle = document.getElementById('pushToggle');
+    if (toggle.checked) {
+        const ok = await enablePushNotifications();
+        if (!ok) toggle.checked = false;
+        else document.getElementById('pushToggleContainer')?.remove();
+    } else { await disablePushNotifications(); }
+}
+window.togglePush = togglePush;
+
+async function enablePushNotifications() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) { alert('Браузер не поддерживает push'); return false; }
+    try {
+        const reg = await navigator.serviceWorker.register('/sw.js');
+        const vapidKey = await API.getVapidKey();
+        const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToUint8Array(vapidKey) });
+        await API.subscribePush({ endpoint: sub.endpoint, p256dh: btoa(String.fromCharCode(...new Uint8Array(sub.getKey('p256dh')))), auth: btoa(String.fromCharCode(...new Uint8Array(sub.getKey('auth')))) });
+        return true;
+    } catch(e) { console.error(e); return false; }
+}
+
+async function disablePushNotifications() {
+    try {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        if (sub) { await sub.unsubscribe(); await API.unsubscribePush({ endpoint: sub.endpoint }); }
+    } catch(e) {}
+}
+
+function urlB64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+    return outputArray;
+}
+
+async function init() {
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tokenFromUrl = urlParams.get('accessToken');
+        const tokenFromStorage = localStorage.getItem("accessToken");
+        const token = tokenFromUrl || tokenFromStorage;
+        if (token) {
+            setAccessToken(token);
+            if (tokenFromUrl) {
+                localStorage.setItem("accessToken", token);
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        }
+
+        const data = await API.getMe();
+        state.playerId = data.id;
+        state.isAdmin = data.admin || false;
+        if (data.admin) {
+            document.getElementById('nav-admin')?.classList.remove('hidden');
+            document.getElementById('mobile-nav-admin')?.classList.remove('hidden');
+        }
+        document.getElementById('playerName').textContent = capitalizeName(data.name);
+        document.getElementById('sidebarPlayerName').textContent = capitalizeName(data.name);
+        const mobileName = document.getElementById('mobilePlayerName');
+        if (mobileName) mobileName.textContent = capitalizeName(data.name);
+        if (data.theme) document.documentElement.setAttribute('data-theme', data.theme);
+        const p = new URLSearchParams(window.location.search).get('page');
+        if (p === 'sum' || p === 'halls') {
+            document.getElementById('homePage').style.display = 'none';
+            document.getElementById('actionPage').classList.remove('hidden');
+            document.getElementById('actionPage').style.opacity = '1';
+            if (p === 'sum') showAction('sum'); else showAction('halls');
+            loadDashboardWidgets();
+            loadTopWeekPreview();
+            loadSelectedHalls();
+        } else {
+            await loadDashboardWidgets();
+            loadTopWeekPreview();
+            loadSelectedHalls();
+        }
+        checkPushStatus();
+    } catch (e) {
+        window.location.href = '/';
+    } finally {
+        document.getElementById('appLoader')?.remove();
+    }
+}
+
+const ptr = document.getElementById('ptrIndicator');
+let ptrStart = 0, ptrTriggered = false;
+document.addEventListener('touchstart', e => { if (window.scrollY <= 5) { ptrStart = e.touches[0].clientX; ptrTriggered = false; } }, { passive: true });
+document.addEventListener('touchmove', e => { if (ptrTriggered || ptrStart === 0 || window.scrollY > 5) return; if (e.touches[0].clientX - ptrStart > 60) { ptrTriggered = true; ptr.innerHTML = '<span class="spinner-sm"></span> Обновление...'; ptr.classList.add('active'); } }, { passive: true });
+document.addEventListener('touchend', () => { if (ptrTriggered) { loadDashboardWidgets(); loadTopWeekPreview(); setTimeout(() => { ptr.innerHTML = '✓ Обновлено'; ptr.classList.add('done'); setTimeout(() => ptr.classList.remove('active', 'done'), 1200); }, 500); } ptrStart = 0; });
+
+window.toggleMobileMenu = function() {
+    const menu = document.getElementById('mobileMenu'), overlay = document.getElementById('mobileMenuOverlay');
+    if (menu.classList.contains('translate-x-0')) { menu.classList.remove('translate-x-0'); menu.classList.add('translate-x-full'); overlay.classList.add('hidden'); }
+    else { menu.classList.remove('translate-x-full'); menu.classList.add('translate-x-0'); overlay.classList.remove('hidden'); }
+};
+window.mobileNav = function(action, el) {
+    toggleMobileMenu();
+    document.querySelectorAll('.mobile-nav-item').forEach(i => i.classList.remove('bg-indigo-500/10','border-indigo-500/20'));
+    el.classList.add('bg-indigo-500/10','border-indigo-500/20');
+    if (action === 'home') goHome(); else showAction(action);
+};
+
+document.addEventListener('DOMContentLoaded', init);
