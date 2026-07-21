@@ -18,6 +18,7 @@ public class ViewInitializer implements CommandLineRunner {
     @Transactional
     public void run(String... args) {
         log.info("Создание top_players_view...");
+        entityManager.createNativeQuery("DROP TABLE IF EXISTS top_players_view CASCADE").executeUpdate();
         entityManager.createNativeQuery("DROP VIEW IF EXISTS top_players_view CASCADE").executeUpdate();
         entityManager.createNativeQuery("""
             CREATE VIEW top_players_view AS
