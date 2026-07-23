@@ -17,11 +17,9 @@ public class ViewInitializer implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
-        log.info("Создание top_players_view...");
-        entityManager.createNativeQuery("DROP TABLE IF EXISTS top_players_view CASCADE").executeUpdate();
-        entityManager.createNativeQuery("DROP VIEW IF EXISTS top_players_view CASCADE").executeUpdate();
+        log.info("Обновление top_players_view...");
         entityManager.createNativeQuery("""
-            CREATE VIEW top_players_view AS
+            CREATE OR REPLACE VIEW top_players_view AS
             SELECT p.id AS player_id, p.name, p.primary_league, 'WEEK' AS period,
                 COALESCE(SUM(CASE WHEN tr.date >= DATE_TRUNC('week', CURRENT_DATE)::date THEN tr.amount ELSE 0 END), 0) AS total,
                 COUNT(CASE WHEN tr.date >= DATE_TRUNC('week', CURRENT_DATE)::date THEN 1 ELSE NULL END) AS tournaments
@@ -44,6 +42,6 @@ public class ViewInitializer implements CommandLineRunner {
             GROUP BY p.id, p.name, p.primary_league
             ORDER BY period, total DESC
         """).executeUpdate();
-        log.info("top_players_view создан");
+        log.info("top_players_view обновлён");
     }
 }

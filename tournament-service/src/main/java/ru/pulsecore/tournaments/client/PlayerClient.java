@@ -10,14 +10,15 @@ import ru.pulsecore.shared.config.constants.feighn.FeignPlayerApi;
 import ru.pulsecore.shared.dto.player.PlayerData;
 import ru.pulsecore.shared.dto.player.PlayerSearchResponse;
 import ru.pulsecore.shared.dto.player.PlayerSettingsDto;
-import ru.pulsecore.tournaments.config.PlayerServiceFeignConfig;
+//import ru.pulsecore.tournaments.config.PlayerServiceFeignConfig;
 
 import java.util.List;
 import java.util.UUID;
 
 @FeignClient(
         name = FeignClientConstants.USER_SERVICE,
-        configuration = PlayerServiceFeignConfig.class
+//        configuration = PlayerServiceFeignConfig.class,
+        fallbackFactory =  PlayerClientFallbackFactory.class
 
 )
 public interface PlayerClient {

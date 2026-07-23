@@ -9,7 +9,51 @@ spring:
       enabled: false
     gateway:
       routes:
-        # Статика
+        # ===== SWAGGER UI (КОРНЕВОЙ) =====
+        - id: swagger-ui-root
+          uri: lb://user-service
+          predicates:
+            - Path=/swagger-ui.html, /swagger-ui/**
+          filters:
+            - StripPrefix=0
+
+        # ===== SWAGGER API DOCS ДЛЯ КАЖДОГО СЕРВИСА =====
+        - id: user-service-api-docs
+          uri: lb://user-service
+          predicates:
+            - Path=/user-service/v3/api-docs/**
+          filters:
+            - StripPrefix=1
+
+        - id: tournament-service-api-docs
+          uri: lb://tournament-service
+          predicates:
+            - Path=/tournament-service/v3/api-docs/**
+          filters:
+            - StripPrefix=1
+
+        - id: payment-service-api-docs
+          uri: lb://payment-service
+          predicates:
+            - Path=/payment-service/v3/api-docs/**
+          filters:
+            - StripPrefix=1
+
+        - id: notification-service-api-docs
+          uri: lb://notification-service
+          predicates:
+            - Path=/notification-service/v3/api-docs/**
+          filters:
+            - StripPrefix=1
+
+        - id: admin-service-api-docs
+          uri: lb://admin-service
+          predicates:
+            - Path=/admin-service/v3/api-docs/**
+          filters:
+            - StripPrefix=1
+
+        # ===== СТАТИКА =====
         - id: static
           uri: lb://user-service
           predicates:
@@ -18,43 +62,43 @@ spring:
               /live.html, /live-tournament.html, /css/**, /js/**, /img.png, /favicon.ico,
               /manifest.json, /robots.txt, /sw.js, /push.js
 
-        # Страницы
+        # ===== СТРАНИЦЫ =====
         - id: pages
           uri: lb://user-service
           predicates:
             - Path=/dashboard, /profile, /subscribe, /admin, /analytics, /live, /live-tournament, /oauth-finish, /register
 
-        # OAuth
+        # ===== OAUTH =====
         - id: user-service-oauth
           uri: lb://user-service
           predicates:
             - Path=/login/**, /oauth2/**
 
-        # User-service API
+        # ===== USER-SERVICE API =====
         - id: user-service-api
           uri: lb://user-service
           predicates:
             - Path=/api/player/**, /api/auth/**, /api/push/**, /api/players, /api/shared/**, /online/**
 
-        # Tournament-service
+        # ===== TOURNAMENT-SERVICE =====
         - id: tournament-service
           uri: lb://tournament-service
           predicates:
             - Path=/api/tournaments/**, /api/tournament/**, /api/lineups/**, /api/live/**, /api/online/**
 
-        # Notification-service
+        # ===== NOTIFICATION-SERVICE =====
         - id: notification-service
           uri: lb://notification-service
           predicates:
             - Path=/api/internal/notification/**
 
-        # Payment-service
+        # ===== PAYMENT-SERVICE =====
         - id: payment-service
           uri: lb://payment-service
           predicates:
             - Path=/api/prices/**, /api/payment/**, /api/pay/**
 
-        # Admin-service
+        # ===== ADMIN-SERVICE =====
         - id: admin-service
           uri: lb://admin-service
           predicates:
@@ -69,5 +113,26 @@ eureka:
 
 logging:
   level:
-    org.springframework.cloud.gateway: TRACE
-    reactor.netty: TRACE
+    org.springframework.cloud.gateway: INFO
+    reactor.netty: INFO
+
+# ===== SPRINGDOC (SWAGGER AGGREGATOR) =====
+springdoc:
+  api-docs:
+    enabled: true
+    resolve-schema-properties: true
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    urls:
+      - name: user-service
+        url: /user-service/v3/api-docs
+      - name: tournament-service
+        url: /tournament-service/v3/api-docs
+      - name: payment-service
+        url: /payment-service/v3/api-docs
+      - name: notification-service
+        url: /notification-service/v3/api-docs
+      - name: admin-service
+        url: /admin-service/v3/api-docs
+    urls-primary-name: user-service

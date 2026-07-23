@@ -1,5 +1,5 @@
 services:
-  # ========== ИНФРАСТРУКТУРА ==========
+
   db:
     image: postgres:15
     container_name: pulsecore-db
@@ -160,6 +160,7 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
 
   admin-service:
+
     build: ./admin-service
     container_name: admin-service
     restart: always

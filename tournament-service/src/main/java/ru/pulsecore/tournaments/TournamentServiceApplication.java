@@ -9,7 +9,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @EnableDiscoveryClient
-@ComponentScan(basePackages = "ru.pulsecore")  // ✅ добавить
+@ComponentScan(basePackages = "ru.pulsecore")
 @EnableCaching
 @EnableFeignClients
 @EnableScheduling
