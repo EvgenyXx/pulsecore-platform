@@ -13,9 +13,9 @@ import ru.pulsecore.shared.dto.event.MailNotificationEvent;
 import ru.pulsecore.shared.util.DateTimeUtils;
 import ru.pulsecore.shared.util.StringUtils;
 import ru.pulsecore.tournaments.client.PlayerClient;
-import ru.pulsecore.tournaments.event.KafkaPublisher;
 import ru.pulsecore.tournaments.service.cache.PlayerCache;
 import ru.pulsecore.tournaments.service.notification.NotificationPermissionService;
+import ru.pulsecore.tournaments.service.outbox.OutBoxService;
 import ru.pulsecore.tournaments.validator.PushMessageBuilder;
 
 import java.util.*;
@@ -29,7 +29,7 @@ public class TournamentDiscoveryService {
     private final TournamentFinder finder;
     private final TournamentFilter filter;
     private final TournamentSaver saver;
-    private final KafkaPublisher kafkaPublisher;
+    private final OutBoxService outBoxService;
     private final NotificationPermissionService notificationPermissionService;
     private final PlayerClient playerClient;
     private final PlayerCache playerCache;
@@ -68,7 +68,7 @@ public class TournamentDiscoveryService {
     private void sendEmailIfAllowed(PlayerData player, TournamentDto t, boolean canEmail) {
         if (!canEmail) return;
         String rawDate = t.getDate() != null ? t.getDate().getDate() : null;
-        kafkaPublisher.publish(KafkaTopics.EMAIL_NOTIFICATION,
+        outBoxService.save(KafkaTopics.EMAIL_NOTIFICATION,
                 new MailNotificationEvent(MailTypes.NEW_TOURNAMENT,
                         new NewTournamentContext(
                                 player.email(),
@@ -84,7 +84,7 @@ public class TournamentDiscoveryService {
 
     private void sendPushIfAllowed(PlayerData player, TournamentDto t, boolean canPush) {
         if (!canPush) return;
-        kafkaPublisher.publish(KafkaTopics.PUSH_NOTIFICATION,
+        outBoxService.save(KafkaTopics.PUSH_NOTIFICATION,
                 new PushNotificationEvent(player.id(), "📋 Вы в составе!",
                         PushMessageBuilder.buildNewTournamentBody(player.name(), t), "/dashboard"));
     }

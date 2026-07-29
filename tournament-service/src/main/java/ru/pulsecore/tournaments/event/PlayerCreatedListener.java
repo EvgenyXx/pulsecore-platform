@@ -9,23 +9,22 @@ import org.springframework.stereotype.Component;
 
 import ru.pulsecore.shared.config.constants.KafkaTopics;
 import ru.pulsecore.shared.dto.event.PlayerCreatedEvent;
-import ru.pulsecore.tournaments.service.tournament.TournamentAutoAddService;
-import ru.pulsecore.tournaments.service.tournament.TournamentCascadeSyncService;
+import ru.pulsecore.shared.util.JsonUtils;
+import ru.pulsecore.tournaments.service.PlayerCreatedHandler;
+
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class PlayerCreatedListener {
 
-    private final TournamentAutoAddService tournamentAutoAddService;
-    private final TournamentCascadeSyncService cascadeSyncService;
+//todo добавь обработку если все пошло не по плану
+    private final PlayerCreatedHandler  playerCreatedHandler;
 
     @KafkaListener(topics = KafkaTopics.PLAYER_CREATED)
-    public void handle(PlayerCreatedEvent event) {
-        tournamentAutoAddService.addRecentTournamentsForPlayer(
-                event.playerId(), event.playerName(), event.days());
-
-        cascadeSyncService.syncAllHistory(event.playerId(),event.playerName());
+    public void handle(String json) {
+        PlayerCreatedEvent event = JsonUtils.fromJson(json, PlayerCreatedEvent.class);
+        playerCreatedHandler.handle(event);
         log.info("Player {} created", event.playerId());
     }
 

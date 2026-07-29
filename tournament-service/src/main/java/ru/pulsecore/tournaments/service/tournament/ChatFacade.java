@@ -13,7 +13,7 @@ import java.util.UUID;
 public class ChatFacade {
 
     private final ChatService chatService;
-    private final ChatMentionService chatMentionService;
+
     private final ChatWebSocketService chatWebSocketService;
 
     public List<ChatMessageDto> getMessages(Long lineupId, Long after) {
@@ -31,7 +31,7 @@ public class ChatFacade {
     }
 
     public List<PlayerSearchResponse> searchPlayers(String q) {
-        return chatMentionService.searchPlayers(q);
+        return chatService.searchPlayers(q);
     }
 
     public void deleteMessage(Long messageId, UUID playerId) {

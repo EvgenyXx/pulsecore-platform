@@ -5,9 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.pulsecore.shared.config.constants.KafkaTopics;
 import ru.pulsecore.shared.dto.event.PushNotificationEvent;
-import ru.pulsecore.tournaments.event.KafkaPublisher;
 import ru.pulsecore.tournaments.service.notification.NotificationPermissionService;
 import ru.pulsecore.tournaments.persistence.entity.PlayerNotification;
+import ru.pulsecore.tournaments.service.outbox.OutBoxService;
 import ru.pulsecore.tournaments.validator.PushMessageBuilder;
 
 import java.util.*;
@@ -17,8 +17,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class TournamentFinishNotificationService {
-
-    private final KafkaPublisher kafkaPublisher;
+    //todo добавить батчу отправлять пачка и так же сделать в получателе
+    private final OutBoxService outBoxService;
     private final NotificationPermissionService notificationPermissionService;
 
     public void sendCancelled(List<PlayerNotification> notifications) {
@@ -39,7 +39,7 @@ public class TournamentFinishNotificationService {
 
             String time = tournament.getTime() != null ? tournament.getTime() : "?";
             String date = tournament.getDate() != null ? tournament.getDate().toString() : "?";
-            kafkaPublisher.publish(KafkaTopics.PUSH_NOTIFICATION, new PushNotificationEvent(
+            outBoxService.save(KafkaTopics.PUSH_NOTIFICATION, new PushNotificationEvent(
                     pn.getPlayerId(),
                     "❌ Турнир отменён!",
                     PushMessageBuilder.buildCancelledBody(date, time),

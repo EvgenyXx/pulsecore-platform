@@ -45,6 +45,9 @@ spring:
             user-info-uri: https://login.yandex.ru/info
             user-name-attribute: id
   kafka:
+    admin:
+      fail-fast: false
+      auto-create: false
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
