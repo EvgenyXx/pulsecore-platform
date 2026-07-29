@@ -13,6 +13,7 @@ import ru.pulsecore.tournaments.persistence.repository.TournamentRepository;
 
 import java.time.LocalDate;
 
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -28,19 +29,16 @@ public class TournamentUrlProcessor {
 
 
     public void processByUrl(String url, UUID playerId, String playerName) {
-
         ParsedResult parsed = parseUrl(url);
         TournamentEntity tournament = findOrCreateTournament(parsed, url);
         updateTournamentDates(tournament, parsed);
 
-        tournamentResultService.processResults(
-                parsed.results(), playerId, playerName, parsed.tournamentId(),
+        tournamentResultService.processResultsForPlayer(
+                parsed.results(), playerId, playerName, tournament,
                 parsed.nightBonus(),
                 parsed.isFinished() || parsed.isFinalRemoved(),
                 parsed.hasRemoved(),
                 parsed.league());
-
-
     }
 
 

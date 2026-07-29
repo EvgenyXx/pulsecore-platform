@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.pulsecore.shared.dto.tournament.response.TopLeagueResponse;
 import ru.pulsecore.tournaments.api.TournamentApi;
 import ru.pulsecore.tournaments.api.annotation.ApiV1TournamentController;
-import ru.pulsecore.tournaments.service.internal.TopPeriodService;
+import ru.pulsecore.tournaments.service.tournament.TopPeriodService;
 
 import java.util.UUID;
 

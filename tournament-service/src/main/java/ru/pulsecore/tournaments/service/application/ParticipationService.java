@@ -3,16 +3,16 @@ package ru.pulsecore.tournaments.service.application;
 import org.springframework.stereotype.Service;
 import ru.pulsecore.tournaments.domain.ParsedResult;
 
+import java.util.Map;
+import java.util.UUID;
+
 @Service
 public class ParticipationService {
 
-    public boolean isUserInParsed(ParsedResult parsed, String playerName) {
-        if (parsed == null || parsed.results() == null) return false;
+    public boolean isAnyUserInParsed(ParsedResult parsed, Map<UUID, String> roster) {
+        if (parsed == null || parsed.results() == null || roster.isEmpty()) return false;
 
         return parsed.results().stream()
-                .anyMatch(r ->
-                        r.getPlayer() != null &&
-                                r.getPlayer().equalsIgnoreCase(playerName)
-                );
+                .anyMatch(r -> r.getPlayer() != null && roster.containsValue(r.getPlayer()));
     }
-}
+}//todo подозрения

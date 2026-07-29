@@ -23,6 +23,7 @@ public class SumResponse {
     private int totalPages;
     private int currentPage;
     private long totalElements;
+    private boolean fallback;
 
     @Data
     @Builder

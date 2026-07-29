@@ -23,7 +23,7 @@ public class RegistrationFacade {
 
     private final RegistrationValidator validator;
     private final VerificationCodeGenerator codeGenerator;
-    private final RegistrationMailService mailService;
+    private final RegistrationEventPublisher registrationEventPublisher;
     private final PlayerFactory playerFactory;
     private final RoleService roleService;
     private final AuthTokenService authTokenService;
@@ -33,7 +33,7 @@ public class RegistrationFacade {
     public void initiate(String name, String email, String rawPassword) {
         validator.validate(email, name);
         String code = codeGenerator.generate();
-        mailService.sendVerificationCode(email, code);
+        registrationEventPublisher.verificationCode(email,code);
 
         Pending pending = new Pending(name, email, rawPassword, code);
         redisTemplate.opsForValue().set(PREFIX + email, pending, TTL);
@@ -50,9 +50,9 @@ public class RegistrationFacade {
         var defaultRole = roleService.findRoleUser();
         Player player = playerFactory.create(pending.name(), pending.email(), pending.password(), defaultRole);
 
-        mailService.notifyAdminNewUser(player,ip,userAgent);
-        mailService.sendWelcome(player);
-        postRegistrationService.execute(player);
+
+        postRegistrationService.createTrial(player);
+        registrationEventPublisher.playerCreated(player, ip, userAgent);
 
         var tokens = authTokenService.generateTokens(player);
         redisTemplate.delete(PREFIX + email);
@@ -67,7 +67,9 @@ public class RegistrationFacade {
         return new RegistrationResult(response, tokens.refreshToken());
     }
 
-    public record Pending(String name, String email, String password, String code) implements java.io.Serializable {}
+    public record Pending(String name, String email, String password, String code) implements java.io.Serializable {
+    }
 
-    public record RegistrationResult(AuthResponse response, String refreshToken) {}
+    public record RegistrationResult(AuthResponse response, String refreshToken) {
+    }
 }

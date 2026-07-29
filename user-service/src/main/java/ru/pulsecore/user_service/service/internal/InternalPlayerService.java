@@ -13,8 +13,12 @@ import ru.pulsecore.user_service.exception.player.PlayerNotFoundException;
 import ru.pulsecore.user_service.repository.PlayerRepository;
 
 
+
 import java.util.List;
+
+import java.util.Set;
 import java.util.UUID;
+
 
 
 @RequiredArgsConstructor
@@ -35,20 +39,24 @@ public class InternalPlayerService {
                 .toList();
     }
 
-    public PlayerSettingsDto getSettings(UUID playerId) {
-        var player = playerRepository.findSettingsById(playerId)
-                .orElseThrow(() -> new PlayerNotFoundException(playerId));
-        return new PlayerSettingsDto(
-                player.getPushEnabled(),
-                player.getNotificationsEnabled(),
-                player.getActiveSubscription()
-        );
+    public List<PlayerSettingsDto> getSettings(Set<UUID> playerId) {
+       return playerRepository.findSettingsByIds(playerId)
+               .stream()
+               .map(p ->
+                       new PlayerSettingsDto(
+                               p.getId(),
+                               p.getPushEnabled(),
+                               p.getNotificationsEnabled(),
+                               p.getActiveSubscription())
+                       ).toList();
     }
 
-    public PlayerData getById(UUID playerId) {
-        var player = playerRepository.findDataById(playerId)
-                .orElseThrow(() -> new PlayerNotFoundException(playerId));
-        return new PlayerData(player.getId(), player.getName(), player.getEmail());
+    public List<PlayerData> getPlayerDataByIds(Set<UUID> playerIds) {
+        return playerRepository.findPlayerDataById(playerIds)
+                .stream().map(
+                        projection ->
+                                new PlayerData(projection.getId(),projection.getName(),projection.getEmail())
+                ).toList();
     }
 
     public List<PlayerSearchResponse>searchByName(String name) {

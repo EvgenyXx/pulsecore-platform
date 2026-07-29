@@ -10,15 +10,16 @@ import ru.pulsecore.shared.config.constants.feighn.FeignPlayerApi;
 import ru.pulsecore.shared.dto.player.PlayerData;
 import ru.pulsecore.shared.dto.player.PlayerSearchResponse;
 import ru.pulsecore.shared.dto.player.PlayerSettingsDto;
-//import ru.pulsecore.tournaments.config.PlayerServiceFeignConfig;
+
 
 import java.util.List;
+
+import java.util.Set;
 import java.util.UUID;
 
 @FeignClient(
         name = FeignClientConstants.USER_SERVICE,
-//        configuration = PlayerServiceFeignConfig.class,
-        fallbackFactory =  PlayerClientFallbackFactory.class
+        fallbackFactory = PlayerClientFallbackFactory.class
 
 )
 public interface PlayerClient {
@@ -31,7 +32,7 @@ public interface PlayerClient {
 
 
     @GetMapping(FeignPlayerApi.BASE + FeignPlayerApi.SETTINGS)
-    PlayerSettingsDto getSettings(@PathVariable UUID playerId);
+    List<PlayerSettingsDto> getSettings(@RequestParam Set<UUID> playerId);
 
 
     @GetMapping(FeignPlayerApi.BASE + FeignPlayerApi.GET_LIVE_HALLS)
@@ -47,8 +48,9 @@ public interface PlayerClient {
     String getPlayerName(@PathVariable UUID playerId);
 
 
-    @GetMapping(FeignPlayerApi.BASE + FeignPlayerApi.GET_BY_ID)
-    PlayerData getById(@PathVariable UUID playerId);
+    @GetMapping(FeignPlayerApi.BASE + FeignPlayerApi.GET_PLAYER_DATA_BY_IDS)
+    List<PlayerData> getPlayerDataByIds(@RequestParam Set<UUID> playerId);
+
 
 
 }

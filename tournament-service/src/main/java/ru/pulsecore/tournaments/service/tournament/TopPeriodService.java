@@ -1,4 +1,4 @@
-package ru.pulsecore.tournaments.service.internal;
+package ru.pulsecore.tournaments.service.tournament;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;

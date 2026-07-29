@@ -12,6 +12,7 @@ import ru.pulsecore.tournaments.persistence.entity.TournamentResultEntity;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -30,33 +31,34 @@ public class TournamentResultService {
         processor.updateResult(id, amount, bonus);
     }
 
-    public TournamentResultEntity save(TournamentResultEntity entity) {
-        return persistence.save(entity);
-    }
+
 
     public PeriodStatsProjection getStatsByPeriod(UUID playerId, LocalDate start, LocalDate end) {
         return persistence.getStatsByPeriod(playerId, start, end);
     }
 
-    public void processResults(List<ResultDto> results,
-                               UUID playerId,
-                               String playerName,
-                               TournamentEntity tournament,
-                               double bonus,
-                               boolean isFinished,
-                               boolean hasRemoved,
-                               String league) {
-        processor.processResults(results, playerId,playerName, tournament, bonus, isFinished, hasRemoved, league);
+    public void processResultsForRoster(List<ResultDto> results,
+                                        Map<UUID, String> roster,
+                                        TournamentEntity tournament,
+                                        double bonus,
+                                        boolean isFinished,
+                                        boolean hasRemoved,
+                                        String league) {
+        processor.processResults(results, roster, tournament, bonus, isFinished, hasRemoved, league);
     }
 
-    public boolean processResults(List<ResultDto> results,
-                                  UUID playerId,
-                                  String playerName,
-                                  Long tournamentId,
-                                  double bonus,
-                                  boolean isFinished,
-                                  boolean hasRemoved,
-                                  String league) {
-        return processor.processResults(results, playerId, tournamentId,playerName, bonus, isFinished, hasRemoved, league);
+    public void processResultsForPlayer(List<ResultDto> results,
+                                        UUID playerId, String playerName,
+                                        TournamentEntity tournament,
+                                        double bonus, boolean isFinished, boolean hasRemoved, String league) {
+        processor.processResults(
+                results,
+                playerId,
+                playerName,
+                tournament,
+                bonus,
+                isFinished,
+                hasRemoved,
+                league);
     }
 }

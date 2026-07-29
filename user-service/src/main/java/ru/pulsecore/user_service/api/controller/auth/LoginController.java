@@ -30,7 +30,7 @@ public class LoginController {
     @PostMapping(PlayerApi.LOGIN)
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request,
                                               HttpServletResponse response) {
-        return ResponseEntity.ok(authFacade.login(request.getEmail(), request.getPassword(), response));
+        return ResponseEntity.ok(authFacade.login(request.email(), request.password(), response));
     }
 
     @Operation(summary = "Обновить access-токен")

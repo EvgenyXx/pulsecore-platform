@@ -17,7 +17,7 @@ import ru.pulsecore.user_service.api.PlayerApi;
 
 import ru.pulsecore.user_service.api.dto.response.ScheduledReportResponse;
 import ru.pulsecore.user_service.api.dto.request.CreateScheduledReportRequest;
-import ru.pulsecore.user_service.scheduler.ScheduledReportFacade;
+import ru.pulsecore.user_service.service.ScheduledReportFacade;
 
 
 import java.util.List;

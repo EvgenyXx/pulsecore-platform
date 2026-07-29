@@ -1,25 +1,29 @@
 spring:
+  profiles:
+    active: local
   application:
     name: user-service
-
-  kafka:
-    bootstrap-servers: localhost:9092
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-    consumer:
-      group-id: user-service
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      properties:
-        spring.json.trusted.packages: ru.pulsecore.shared.dto.event,ru.pulsecore.shared.context,ru.pulsecore.shared.dto
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+  flyway:
+    enabled: false
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 0
 
   cloud:
+    openfeign:
+      circuitbreaker:
+        enabled: true
     discovery:
       enabled: true
     loadbalancer:
       retry:
         enabled: false
+
+
 
   security:
     oauth2:
@@ -40,26 +44,16 @@ spring:
             token-uri: https://oauth.yandex.ru/token
             user-info-uri: https://login.yandex.ru/info
             user-name-attribute: id
-
-  datasource:
-    url: jdbc:postgresql://localhost:5432/botdb
-    username: botuser
-    password: 1234
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: false
-  flyway:
-    enabled: false
-    locations: classpath:db/migration
-    baseline-on-migrate: true
-    baseline-version: 0
-
-  data:
-    redis:
-      host: localhost
-      port: 6379
-      password: redispass
+  kafka:
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: user-service
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: ru.pulsecore.shared.dto.event,ru.pulsecore.shared.context,ru.pulsecore.shared.dto
 
 jwt:
   private-key: classpath:private.pem
@@ -69,7 +63,13 @@ jwt:
   refresh-token-ttl: 30d
   issuer: pulsecore-user-service
 
-
+resilience4j:
+  circuitbreaker:
+    instances:
+      tournament-service:
+        sliding-window-size: 2
+        failure-rate-threshold: 100
+        wait-duration-in-open-state: 180s
 
 springdoc:
   api-docs:
@@ -84,24 +84,25 @@ server:
 
 logging:
   level:
+    root: WARN
     ru.pulsecore: INFO
     ru.pulsecore.user_service.config.RequestLoggingFilter: WARN
     ru.pulsecore.user_service.client: WARN
     org.apache.kafka.clients.producer.ProducerConfig: WARN
     org.apache.kafka.clients.consumer.ConsumerConfig: WARN
     org.apache.kafka.clients.admin.AdminClientConfig: WARN
+    org.springframework.kafka: WARN
+    org.apache.kafka: WARN
+    com.netflix.discovery: WARN
+    org.springframework.cloud.netflix: WARN
+    ru.pulsecore.user_service.service.player.UpdatePriorityLeagueService: DEBUG
 
 
-
-# Включаем Circuit Breaker для Feign
 
 
 eureka:
   instance:
     preferIpAddress: true
-  client:
-    serviceUrl:
-      defaultZone: http://localhost:8761/eureka
 
 app:
   security:
@@ -129,10 +130,7 @@ app:
       - /api/admin/**
     oauth:
       unknown-email-domain: "@unknown.pulsecore"
-
-
   base-url: http://localhost:8080
   qr-color: "#14b8a6"
   admin:
     email: evgenypavlov666@yandex.ru
-

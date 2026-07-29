@@ -10,10 +10,8 @@ import ru.pulsecore.tournaments.service.parser.NumberUtils;
 
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -24,7 +22,7 @@ public class UpcomingTournamentService {
 
     private static final int FORECAST_DAYS = 3;
 
-    public Map<String, List<TournamentDto>> getAllTournamentsFor3Days() {
+    private Map<String, List<TournamentDto>> getAllTournamentsFor3Days() {
         Map<String, List<TournamentDto>> all = new LinkedHashMap<>();
         LocalDate today = LocalDate.now();
 
@@ -35,16 +33,25 @@ public class UpcomingTournamentService {
         return all;
     }
 
-    public List<TournamentDto> findPlayerTournaments(String searchName) {
+    public Map<String, List<TournamentDto>> findPlayersTournaments(Set<String> names) {
         Map<String, List<TournamentDto>> all = getAllTournamentsFor3Days();
-        String normalized = StringUtils.normalizeSearch(searchName);
-        List<TournamentDto> result = new ArrayList<>();
+        Map<String, String> normalizedNames = names.stream()
+                .collect(Collectors.toMap(StringUtils::normalizeSearch, name -> name));
+
+        Map<String, List<TournamentDto>> result = names.stream()
+                .collect(Collectors.toMap(name -> name, name -> new ArrayList<>()));
 
         for (List<TournamentDto> dayTournaments : all.values()) {
             for (TournamentDto t : dayTournaments) {
-                if (containsPlayer(t, normalized)) {
-                    t.setHallNumber(NumberUtils.extractInt(t.getHall()));
-                    result.add(t);
+                if (t.getPlayers() == null) continue;
+                for (String player : t.getPlayers()) {
+                    String normalized = StringUtils.normalizeSearch(player);
+                    String originalName = normalizedNames.get(normalized);
+                    if (originalName != null) {
+                        t.setHallNumber(NumberUtils.extractInt(t.getHall()));
+                        result.get(originalName).add(t);
+                        break;
+                    }
                 }
             }
         }
@@ -61,13 +68,5 @@ public class UpcomingTournamentService {
         }
     }
 
-    private boolean containsPlayer(TournamentDto t, String normalizedName) {
-        if (t.getPlayers() == null) return false;
-        for (String player : t.getPlayers()) {
-            if (player != null && StringUtils.normalizeSearch(player).equals(normalizedName)) {
-                return true;
-            }
-        }
-        return false;
-    }
+
 }

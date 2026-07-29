@@ -8,7 +8,6 @@ import nl.martijndwars.webpush.PushService;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.stereotype.Service;
 import ru.pulsecore.notification_service.repository.PushSubscriptionRepository;
-import ru.pulsecore.notification_service.config.VapidConfig;
 import ru.pulsecore.notification_service.domain.PushSubscription;
 
 import java.security.Security;
@@ -22,12 +21,10 @@ import java.util.UUID;
 public class WebPushService {
 
     private final PushSubscriptionRepository subscriptionRepository;
-    private final VapidConfig vapidConfig;
+    private final PushService pushService;
     private final ObjectMapper objectMapper;
 
-    static {
-        Security.addProvider(new BouncyCastleProvider());
-    }
+
 
     public void sendToPlayer(UUID playerId, String title, String body, String url) {
         List<PushSubscription> subscriptions = subscriptionRepository.findByPlayerId(playerId);
@@ -56,11 +53,6 @@ public class WebPushService {
                 "url", url,
                 "tag", "tournament"
         ));
-
-        PushService pushService = new PushService()
-                .setPublicKey(vapidConfig.getPublicKey())
-                .setPrivateKey(vapidConfig.getPrivateKey())
-                .setSubject("mailto:noreply@pulsecore-app.ru");
 
         pushService.send(new Notification(sub.getEndpoint(), sub.getP256dh(), sub.getAuth(), payload));
     }

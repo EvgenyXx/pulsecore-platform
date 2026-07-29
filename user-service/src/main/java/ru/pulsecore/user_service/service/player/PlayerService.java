@@ -46,7 +46,7 @@ public class PlayerService {
 
 
 
-    @Transactional
+
     public Player save(Player player) {
         if (player.getName() != null) {
             player.setName(NameNormalizer.normalize(player.getName()));

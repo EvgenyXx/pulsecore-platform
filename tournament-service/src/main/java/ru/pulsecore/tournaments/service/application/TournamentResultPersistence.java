@@ -10,6 +10,8 @@ import ru.pulsecore.tournaments.persistence.entity.TournamentResultEntity;
 import ru.pulsecore.tournaments.persistence.repository.TournamentResultRepository;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -24,18 +26,29 @@ public class TournamentResultPersistence {
         return tournamentResultRepository.findByPlayerIdAndDateBetweenOrderByDateAsc(playerId, start, end, pageable);
     }
 
-    public TournamentResultEntity save(TournamentResultEntity entity) {
-        if (existsByPlayerAndTournament(entity)) {
-            return findExisting(entity);
+    public List<TournamentResultEntity> save(List<TournamentResultEntity> entities) {
+        List<TournamentResultEntity> toSave = new ArrayList<>();
+        for (TournamentResultEntity entity : entities) {
+            if (!existsByPlayerAndTournament(entity)) {
+                toSave.add(entity);
+            }
         }
+        if (!toSave.isEmpty()) {
+            List<TournamentResultEntity> saved = tournamentResultRepository.saveAll(toSave);
+            evictCaches();
+            return saved;
+        }
+        return entities;
+    }
 
-        try {
+
+    public TournamentResultEntity saveOne(TournamentResultEntity entity) {
+        if (!existsByPlayerAndTournament(entity)) {
             TournamentResultEntity saved = tournamentResultRepository.save(entity);
             evictCaches();
             return saved;
-        } catch (Exception e) {
-            return entity;
         }
+        return entity;
     }
 
     public PeriodStatsProjection getStatsByPeriod(UUID playerId, LocalDate start, LocalDate end) {
@@ -50,11 +63,5 @@ public class TournamentResultPersistence {
     private boolean existsByPlayerAndTournament(TournamentResultEntity entity) {
         return tournamentResultRepository.existsByPlayerIdAndTournament_ExternalId(
                 entity.getPlayerId(), entity.getTournament().getExternalId());
-    }
-
-    private TournamentResultEntity findExisting(TournamentResultEntity entity) {
-        return tournamentResultRepository
-                .findByPlayerIdAndTournament_ExternalId(entity.getPlayerId(), entity.getTournament().getExternalId())
-                .orElse(entity);
     }
 }
