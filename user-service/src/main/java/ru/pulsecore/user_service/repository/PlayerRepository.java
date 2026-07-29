@@ -13,6 +13,7 @@ import ru.pulsecore.user_service.repository.projection.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Repository
@@ -27,12 +28,16 @@ public interface PlayerRepository extends JpaRepository<Player, UUID> {
 
     @Query(value = "SELECT CAST(p.id AS text) AS id, CAST(p.name AS text) AS name," +
             " CAST(p.email AS text) AS email FROM players p WHERE p.id = :id", nativeQuery = true)
-    Optional<PlayerDataProjection> findDataById(@Param("id") UUID id);
+    List<PlayerDataProjection> findPlayerDataById(@Param("id") Set<UUID> ids);
 
-    @Query(value = "SELECT p.push_enabled AS pushEnabled, p.notifications_enabled AS notificationsEnabled, " +
+
+
+    @Query(value = "SELECT p.id AS id, p.push_enabled AS pushEnabled, p.notifications_enabled AS notificationsEnabled, " +
             "COALESCE(s.active, false) AS activeSubscription " +
-            "FROM players p LEFT JOIN subscription s ON s.player_id = p.id WHERE p.id = :id", nativeQuery = true)
-    Optional<PlayerSettingsProjection> findSettingsById(@Param("id") UUID id);
+            "FROM players p LEFT JOIN subscription s ON s.player_id = p.id WHERE p.id IN (:ids)", nativeQuery = true)
+    List<PlayerSettingsProjection> findSettingsByIds(@Param("ids") Set<UUID> ids);
+
+
 
     @Query("SELECT p.id FROM Player p WHERE LOWER(p.name) = LOWER(:name)")
     Optional<UUID> findIdByNameIgnoreCase(@Param("name") String name);

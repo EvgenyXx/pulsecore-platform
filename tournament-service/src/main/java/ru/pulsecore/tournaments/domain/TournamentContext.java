@@ -17,6 +17,7 @@ public class TournamentContext {
     private List<Match> matches;
     private LeagueType league;
     private double nightBonus;
+    private String url;
 
 
 

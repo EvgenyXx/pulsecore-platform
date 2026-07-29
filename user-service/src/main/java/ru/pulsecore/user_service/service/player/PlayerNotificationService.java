@@ -3,6 +3,7 @@ package ru.pulsecore.user_service.service.player;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.pulsecore.user_service.domain.Player;
 
 
@@ -21,6 +22,7 @@ public class PlayerNotificationService {
     }
 
 
+    @Transactional
     public void setNotificationsEnabled(UUID id, boolean enabled) {
         Player player = playerService.getById(id);
         player.setNotificationsEnabled(enabled);
@@ -28,6 +30,7 @@ public class PlayerNotificationService {
         log.info("🔔 Уведомления {} для игрока {} ({})", enabled ? "включены" : "отключены", player.getName(), id);
     }
 
+    @Transactional
     public boolean togglePushEnabled(UUID playerId) {
         Player player = playerService.getById(playerId);
         player.setPushEnabled(!player.isPushEnabled());

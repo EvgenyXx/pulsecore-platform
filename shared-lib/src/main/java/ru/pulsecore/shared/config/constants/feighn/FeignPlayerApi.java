@@ -3,7 +3,7 @@ package ru.pulsecore.shared.config.constants.feighn;
 public final class FeignPlayerApi {
     public static final String BASE = "/api/internal/players";
 
-    public static final String GET_BY_ID = "/{playerId}";
+    public static final String GET_PLAYER_DATA_BY_IDS = "/{playerIds}";
     public static final String SETTINGS = "/{playerId}/settings";
     public static final String SEARCH = "/search";
     public static final String DELETE = "/{playerId}";

@@ -32,7 +32,7 @@ public class TournamentStatusParser {
             if (stage == null) continue;
 
             if (isFinalStage(stage)) {
-                return isCompleted(row);
+                return isCompleted(row) || isCancelledStatus(row);
             }
         }
         return false;

@@ -30,6 +30,7 @@ public class TournamentExtractor {
     public TournamentContext extract(Document doc) {
 
         Long tournamentId = tournamentParser.parseTournamentId(doc);
+        String url = doc.baseUri();
         TournamentStatus status = tournamentStatusParser.parseStatus(doc);
         String date = tournamentParser.parseDate(doc);
 
@@ -53,6 +54,7 @@ public class TournamentExtractor {
                 matches,
                 league,
                 nightBonus,
+                url,
                 playerDetector.stage(),
                 playerDetector.player(),
                 time

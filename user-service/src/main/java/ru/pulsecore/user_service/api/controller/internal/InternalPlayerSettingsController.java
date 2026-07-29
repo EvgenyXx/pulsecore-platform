@@ -10,8 +10,8 @@ import ru.pulsecore.shared.dto.player.PlayerData;
 import ru.pulsecore.shared.dto.player.PlayerSearchResponse;
 import ru.pulsecore.shared.dto.player.PlayerSettingsDto;
 import ru.pulsecore.user_service.service.internal.InternalPlayerService;
-
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Tag(name = "Игроки (internal)")
@@ -34,16 +34,16 @@ public class InternalPlayerSettingsController {
         return internalPlayerService.getBroadcastRecipients();
     }
 
-    @Operation(summary = "Получить настройки игрока")
+    @Operation(summary = "Получить настройки игроков")
     @GetMapping(FeignPlayerApi.SETTINGS)
-    public PlayerSettingsDto getSettings(@PathVariable UUID playerId) {
+    public List<PlayerSettingsDto> getSettings(@RequestParam Set<UUID> playerId) {
         return internalPlayerService.getSettings(playerId);
     }
 
     @Operation(summary = "Получить игрока по ID")
-    @GetMapping(FeignPlayerApi.GET_BY_ID)
-    public PlayerData getById(@PathVariable UUID playerId) {
-        return internalPlayerService.getById(playerId);
+    @GetMapping(FeignPlayerApi.GET_PLAYER_DATA_BY_IDS)
+    public List<PlayerData> getById(@RequestParam Set<UUID> playerIds) {
+        return internalPlayerService.getPlayerDataByIds(playerIds);
     }
 
     @Operation(summary = "Поиск игроков по имени")

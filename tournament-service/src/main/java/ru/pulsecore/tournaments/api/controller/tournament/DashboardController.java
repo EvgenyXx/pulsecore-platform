@@ -10,7 +10,7 @@ import ru.pulsecore.shared.dto.tournament.response.LastResultDto;
 import ru.pulsecore.shared.dto.tournament.response.UpcomingLineupDto;
 import ru.pulsecore.tournaments.api.TournamentApi;
 import ru.pulsecore.tournaments.api.annotation.ApiV1TournamentController;
-import ru.pulsecore.tournaments.service.internal.DashboardService;
+import ru.pulsecore.tournaments.service.tournament.DashboardService;
 
 import java.util.List;
 import java.util.UUID;

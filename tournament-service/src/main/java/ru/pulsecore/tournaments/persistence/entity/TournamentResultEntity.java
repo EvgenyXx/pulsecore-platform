@@ -34,8 +34,7 @@ public class TournamentResultEntity {
     @Column(name = "player_id", nullable = false)
     private UUID playerId;
 
-    @Column(nullable = false)
-    private String playerName;
+
 
     @Column(nullable = false)
     private Double amount;

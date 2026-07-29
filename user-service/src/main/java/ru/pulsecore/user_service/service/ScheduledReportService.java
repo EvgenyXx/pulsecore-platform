@@ -1,4 +1,4 @@
-package ru.pulsecore.user_service.scheduler;
+package ru.pulsecore.user_service.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

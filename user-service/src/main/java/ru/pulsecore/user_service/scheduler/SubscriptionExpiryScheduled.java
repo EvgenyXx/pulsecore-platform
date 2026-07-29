@@ -9,16 +9,13 @@ import ru.pulsecore.user_service.service.subscription.SubscriptionService;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class SubscriptionExpiryScheduler {
+public class SubscriptionExpiryScheduled {
 
     private final SubscriptionService subscriptionService;
 
     @Scheduled(cron = "0 0 * * * *")
     public void deactivateExpired() {
-        int count = subscriptionService.deactivateExpired();
-        if (count > 0) {
-            log.info("🔧 Деактивировано {} просроченных подписок", count);
-        }
+       subscriptionService.deactivateExpired();
     }
 
     @Scheduled(cron = "0 0 10 * * *")
