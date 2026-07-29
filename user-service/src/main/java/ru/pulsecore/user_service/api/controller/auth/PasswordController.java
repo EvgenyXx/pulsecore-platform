@@ -31,7 +31,7 @@ public class PasswordController {
     @Operation(summary = "Отправить код для сброса пароля")
     @PostMapping(PlayerApi.FORGOT_PASSWORD)
     public ResponseEntity<MessageResponse> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
-        passwordResetService.initiate(request.getEmail());
+        passwordResetService.initiate(request.email());
         return ResponseEntity.ok(new MessageResponse("ok"));
     }
 

@@ -15,9 +15,12 @@ public class SubscriptionEventListener {
 
     private final SubscriptionService subscriptionService;
 
-    @KafkaListener(topics = KafkaTopics.PLAYER_CREATED)
-    public void handle(PaymentSucceededEvent event) {
+
+
+    @KafkaListener(topics = KafkaTopics.PAYMENT_EVENTS)
+    public void handlePaymentSucceeded(PaymentSucceededEvent event) {
         subscriptionService.activate(event.playerId(), event.days());
-        log.info("Подписка активирована: playerId={}, days={}", event.playerId(), event.days());
+        log.info("Подписка после оплаты: playerId={}, days={}", event.playerId(), event.days());
     }
+
 }

@@ -2,6 +2,7 @@ package ru.pulsecore.user_service.service.oauth;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import ru.pulsecore.user_service.domain.Player;
 import ru.pulsecore.user_service.domain.Role;
 import ru.pulsecore.user_service.service.player.PlayerService;
@@ -21,6 +22,7 @@ public class OAuthPlayerBuilder {
     private final RoleService roleService;
     private final RegistrationValidator registrationValidator;
 
+    @Transactional
     public Player build(String name, String email, OAuthSessionExtractor.OAuthSessionData sessionData) {
         registrationValidator.validate(email, name);
         Role userRole = roleService.findRoleUser();

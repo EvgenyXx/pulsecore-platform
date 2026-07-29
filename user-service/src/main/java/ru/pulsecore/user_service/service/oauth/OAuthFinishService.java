@@ -5,12 +5,10 @@ import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.pulsecore.shared.config.constants.KafkaTopics;
-import ru.pulsecore.shared.dto.event.PlayerCreatedEvent;
 import ru.pulsecore.user_service.api.dto.request.OAuthFinishRequest;
 import ru.pulsecore.user_service.exception.auth.OAuthEmailNotReceivedException;
 import ru.pulsecore.user_service.domain.Player;
-import ru.pulsecore.user_service.event.publisher.KafkaEventPublisher;
+import ru.pulsecore.user_service.service.auth.RegistrationEventPublisher;
 
 
 @Service
@@ -20,8 +18,7 @@ public class OAuthFinishService {
     private final OAuthSessionExtractor sessionExtractor;
     private final OAuthPlayerBuilder playerBuilder;
     private final TrialActivator trialActivator;
-    private final OAuthFinishMailer mailer;
-    private final KafkaEventPublisher publisher;
+    private final RegistrationEventPublisher eventPublisher;
 
     @Transactional
     public void complete(OAuthFinishRequest request, HttpServletRequest httpRequest) {
@@ -37,17 +34,11 @@ public class OAuthFinishService {
         Player player = playerBuilder.build(name, email, data);
         trialActivator.activate(player);
 
-        publisher.publish(
-                KafkaTopics.PLAYER_CREATED,
-                new PlayerCreatedEvent(
-                player.getId(),
-                player.getName(),
-                player.getEmail(),
-                30));
+        String ip = httpRequest.getRemoteAddr();
+        String userAgent = httpRequest.getHeader("User-Agent");
 
-        mailer.sendWelcome(player);
-        mailer.notifyAdmin(player, httpRequest);
+        eventPublisher.playerCreated(player, ip, userAgent);
+
         sessionExtractor.clear(session);
-
     }
 }

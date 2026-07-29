@@ -81,11 +81,14 @@ public class SubscriptionService {
         return active;
     }
 
-    public int deactivateExpired() {
+    public void deactivateExpired() {
         List<Subscription> expired = subscriptionRepository.findExpired();
         expired.forEach(s -> s.setActive(false));
         subscriptionRepository.saveAll(expired);
-        return expired.size();
+        if (!expired.isEmpty()){
+            log.info("🔧 Деактивировано {} просроченных подписок", expired.size());
+        }
+
     }
 
 

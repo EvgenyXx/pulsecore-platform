@@ -30,13 +30,6 @@ public class PlayerNotification {
     @JoinColumn(name = "tournament_id", nullable = false)
     private TournamentEntity tournament;
 
-    @Builder.Default
-    @Column(name = "reminder_sent", nullable = false)
-    private boolean reminderSent = false;
-
-    @Builder.Default
-    @Column(name = "evening_sent", nullable = false)
-    private boolean eveningSent = false;
 
     @Builder.Default
     @Column(name = "push_reminder_sent", nullable = false)

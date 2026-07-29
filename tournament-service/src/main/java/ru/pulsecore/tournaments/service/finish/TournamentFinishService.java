@@ -29,23 +29,21 @@ public class TournamentFinishService {
     private final PlayerNotificationRepository repo;
     private final TournamentRepository tournamentRepository;
 
-    public boolean handleFinished(TournamentEntity t,
-                                  List<PlayerNotification> notifications,
-                                  Document doc,
-                                  String playerName) {
+    public void handleFinished(TournamentEntity t,
+                               List<PlayerNotification> notifications,
+                               Document doc) {
 
         ParsedResult parsed = resultService.calculateAll(doc);
-        if (parsed.status() != TournamentStatus.FINISHED) return false;
-        processService.processTournament(notifications, parsed, playerName);
+        if (parsed.status() != TournamentStatus.FINISHED) return;
+        processService.processTournament(notifications, parsed);
         t.setFinished(true);
         t.setProcessed(true);
         tournamentRepository.save(t);
         repo.saveAll(notifications);
-        log.info("🏁 tournament finished: id={}, users={}, results={}",
-                t.getExternalId(),
+        log.info("🏁 tournament finished: url={}, users={}, results={}",
+                t.getLink(),
                 notifications.size(),
                 parsed.results().size());
 
-        return true;
     }
 }

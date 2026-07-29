@@ -1,4 +1,3 @@
-// LeagueAPointsCalculator.java
 package ru.pulsecore.tournaments.service.calculation;
 
 import org.springframework.stereotype.Service;

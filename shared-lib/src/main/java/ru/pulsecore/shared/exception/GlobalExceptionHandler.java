@@ -18,29 +18,29 @@ import java.time.LocalDateTime;
 @Slf4j
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(FeignException.ServiceUnavailable.class)
-    public ResponseEntity<ErrorResponse> handleServiceUnavailable(FeignException.ServiceUnavailable e) {
-        log.warn("Сервис недоступен: {}", e.getMessage());
-        return ResponseEntity.status(503)
-                .body(ErrorResponse.builder()
-                        .status(503)
-                        .error("Service Unavailable")
-                        .message("Сервис временно недоступен")
-                        .timestamp(LocalDateTime.now())
-                        .build());
-    }
-
-    @ExceptionHandler(FeignException.class)
-    public ResponseEntity<ErrorResponse> handleFeign(FeignException e) {
-        log.error("Ошибка Feign: {}", e.getMessage());
-        return ResponseEntity.status(502)
-                .body(ErrorResponse.builder()
-                        .status(502)
-                        .error("Bad Gateway")
-                        .message("Ошибка межсервисного взаимодействия")
-                        .timestamp(LocalDateTime.now())
-                        .build());
-    }
+//    @ExceptionHandler(FeignException.ServiceUnavailable.class)
+//    public ResponseEntity<ErrorResponse> handleServiceUnavailable(FeignException.ServiceUnavailable e) {
+//        log.warn("Сервис недоступен: {}", e.getMessage());
+//        return ResponseEntity.status(503)
+//                .body(ErrorResponse.builder()
+//                        .status(503)
+//                        .error("Service Unavailable")
+//                        .message("Сервис временно недоступен")
+//                        .timestamp(LocalDateTime.now())
+//                        .build());
+//    }
+//
+//    @ExceptionHandler(FeignException.class)
+//    public ResponseEntity<ErrorResponse> handleFeign(FeignException e) {
+//        log.error("Ошибка Feign: {}", e.getMessage());
+//        return ResponseEntity.status(502)
+//                .body(ErrorResponse.builder()
+//                        .status(502)
+//                        .error("Bad Gateway")
+//                        .message("Ошибка межсервисного взаимодействия")
+//                        .timestamp(LocalDateTime.now())
+//                        .build());
+//    }
 
     @ExceptionHandler(ClientAbortException.class)
     public void handleClientAbort(ClientAbortException e) {

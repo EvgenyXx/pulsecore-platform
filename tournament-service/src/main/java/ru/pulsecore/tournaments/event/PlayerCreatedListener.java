@@ -2,6 +2,7 @@ package ru.pulsecore.tournaments.event;
 
 import lombok.RequiredArgsConstructor;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
@@ -13,6 +14,7 @@ import ru.pulsecore.tournaments.service.tournament.TournamentCascadeSyncService;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class PlayerCreatedListener {
 
     private final TournamentAutoAddService tournamentAutoAddService;
@@ -20,11 +22,11 @@ public class PlayerCreatedListener {
 
     @KafkaListener(topics = KafkaTopics.PLAYER_CREATED)
     public void handle(PlayerCreatedEvent event) {
-        System.out.println("ПОЛУЧЕН ИВЕНТ КАФКА " + event);
         tournamentAutoAddService.addRecentTournamentsForPlayer(
                 event.playerId(), event.playerName(), event.days());
 
         cascadeSyncService.syncAllHistory(event.playerId(),event.playerName());
+        log.info("Player {} created", event.playerId());
     }
 
 }

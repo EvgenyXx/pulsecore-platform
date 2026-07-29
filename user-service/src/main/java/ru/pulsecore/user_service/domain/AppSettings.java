@@ -13,8 +13,8 @@ import lombok.*;
 public class AppSettings {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private java.util.UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @Column(unique = true, nullable = false, length = 100)
     private String key;

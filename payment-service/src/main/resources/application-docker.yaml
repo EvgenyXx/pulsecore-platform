@@ -1,0 +1,11 @@
+spring:
+  kafka:
+    bootstrap-servers: kafka:9093
+  datasource:
+    url: jdbc:postgresql://db:5432/botdb
+    username: botuser
+    password: 1234
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://eureka-server:8761/eureka

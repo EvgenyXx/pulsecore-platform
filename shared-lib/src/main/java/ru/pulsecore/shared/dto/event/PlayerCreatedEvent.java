@@ -2,4 +2,11 @@ package ru.pulsecore.shared.dto.event;
 
 import java.util.UUID;
 
-public record PlayerCreatedEvent(UUID playerId, String playerName, String email, int days) {}
+public record PlayerCreatedEvent(
+        UUID playerId,
+        String playerName,
+        String email,
+        int days,
+        String ip,
+        String userAgent
+) {}

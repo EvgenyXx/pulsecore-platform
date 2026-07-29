@@ -13,24 +13,13 @@ import ru.pulsecore.tournaments.persistence.entity.TournamentResultEntity;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Repository
 public interface TournamentResultRepository extends JpaRepository<TournamentResultEntity, Long> {
 
-    @Query("""
-    SELECT tr.playerName AS name, 
-           COUNT(tr) AS tournaments, 
-           COALESCE(ROUND(SUM(tr.amount)), 0) AS total,
-           COALESCE(ROUND(AVG(tr.amount)), 0) AS average
-    FROM TournamentResultEntity tr
-    WHERE tr.playerId = :playerId 
-      AND tr.date BETWEEN :from AND :to
-    GROUP BY tr.playerName
-    """)
-    List<WeeklyStatsProjection> getWeeklyStats(@Param("playerId") UUID playerId,
-                                               @Param("from") LocalDate from,
-                                               @Param("to") LocalDate to);
+
 
     @Query(value = """
     SELECT league FROM (
@@ -113,7 +102,27 @@ public interface TournamentResultRepository extends JpaRepository<TournamentResu
             "WHERE r.playerId = :playerId ORDER BY r.date DESC LIMIT 1")
     Optional<LastResultProjection> findLastResult(@Param("playerId") UUID playerId);
 
-    Optional<TournamentResultEntity> findByPlayerIdAndTournament_ExternalId(@Param("playerId") UUID playerId,
-                                                                            @Param("externalId") Long externalId);
+
+    @Query(value = """
+    SELECT player_id AS playerId, league
+    FROM (
+        SELECT player_id, league, ROW_NUMBER() OVER (
+            PARTITION BY player_id ORDER BY cnt DESC, last_date DESC
+        ) AS rn
+        FROM (
+            SELECT player_id, league, COUNT(*) AS cnt, MAX(date) AS last_date
+            FROM (
+                SELECT player_id, league, date,
+                       ROW_NUMBER() OVER (PARTITION BY player_id ORDER BY date DESC) AS rn2
+                FROM tournament_results
+                WHERE player_id IN (:playerIds)
+            ) ranked
+            WHERE rn2 <= 7
+            GROUP BY player_id, league
+        ) grouped
+    ) ranked2
+    WHERE rn = 1 AND league IS NOT NULL
+""", nativeQuery = true)
+    List<PrimaryLeagueProjection> findPrimaryLeagues(@Param("playerIds") Set<UUID> playerIds);
 
 }

@@ -6,6 +6,8 @@ public final class FeignTournamentApi {
 
 
 
+    //player-service
+    public static final String UPDATE_PRIMARY_LEAGUE = "/primary-league";
 
     public static final String SUM = "/sum";
 
@@ -14,6 +16,7 @@ public final class FeignTournamentApi {
     public static final String PLAYER_TOURNAMENTS = "/admin/player/{playerId}/tournaments";
     public static final String PLAYER_TOURNAMENTS_RESYNC = "/admin/player/{playerId}/tournaments/resync";
     public static final String CALCULATE = "/admin/calculate";
+
 
     private FeignTournamentApi() {}
 }

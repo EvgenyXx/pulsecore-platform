@@ -86,9 +86,9 @@ public class ResultService {
 
     private void logResults(TournamentContext ctx, List<ResultDto> results) {
         if (results.isEmpty() && ctx.getTournamentStatus() != null) {
-            log.info("Tournament {}: no results (status={})", ctx.getTournamentId(), ctx.getTournamentStatus());
+            log.info("Tournament {}: no results (status={})", ctx.getUrl(), ctx.getTournamentStatus());
         } else {
-            log.info("Tournament {}: {} results, status={}", ctx.getTournamentId(), results.size(), ctx.getTournamentStatus());
+            log.info("Tournament {}: {} results, status={}", ctx.getUrl(), results.size(), ctx.getTournamentStatus());
         }
     }
 

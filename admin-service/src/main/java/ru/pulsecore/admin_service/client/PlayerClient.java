@@ -15,8 +15,8 @@ import java.util.UUID;
 )
 public interface PlayerClient {
 
-    //todo переопредилть декодер что бы было видно ошибки
-    @GetMapping(FeignPlayerApi.BASE + FeignPlayerApi.GET_BY_ID)
+    //todo переопредилть декодер что бы было видно ошибки сделать отдельный метод для одиночки
+    @GetMapping(FeignPlayerApi.BASE + FeignPlayerApi.GET_PLAYER_DATA_BY_IDS)
     PlayerData getById(@PathVariable UUID playerId);
 
     @GetMapping(FeignPlayerApi.BASE + FeignPlayerApi.BROADCAST_RECIPIENTS)
