@@ -3,7 +3,7 @@ package ru.pulsecore.payment_service.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import ru.pulsecore.payment_service.event.KafkaEventPublisher;
+
 import ru.pulsecore.payment_service.api.dto.internal.WebhookObject;
 import ru.pulsecore.payment_service.api.dto.reqauest.WebhookRequest;
 import ru.pulsecore.payment_service.domain.Payment;
@@ -23,7 +23,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class WebhookService {
 
-    private final KafkaEventPublisher kafkaEventPublisher;
+    private final OutBoxService outBoxService;
     private final AdminProperties adminProperties;
     private final PaymentRepository paymentRepository;
 
@@ -48,7 +48,7 @@ public class WebhookService {
         int months = Integer.parseInt(payment.metadata().get(METADATA_MONTHS));
         int days = months * DAYS_PER_MONTH;
 
-        kafkaEventPublisher.publish(KafkaTopics.PAYMENT_EVENTS,
+        outBoxService.save(KafkaTopics.PAYMENT_EVENTS,
                 new PaymentSucceededEvent(playerId, days));
 
         paymentRepository.save(Payment.builder()
@@ -58,7 +58,7 @@ public class WebhookService {
                 .paymentId(payment.id())
                 .build());
 
-        kafkaEventPublisher.publish(KafkaTopics.EMAIL_NOTIFICATION,
+        outBoxService.save(KafkaTopics.EMAIL_NOTIFICATION,
                 new MailNotificationEvent(MailTypes.ADMIN_PAYMENT_RECEIVED,
                         new AdminPaymentContext(adminProperties.getEmail(), playerId.toString(),
                                 months, payment.amount().value(), payment.amount().currency())));

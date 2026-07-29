@@ -6,10 +6,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import ru.pulsecore.shared.config.constants.KafkaTopics;
 import ru.pulsecore.shared.dto.event.PushNotificationEvent;
-import ru.pulsecore.tournaments.event.KafkaPublisher;
 import ru.pulsecore.tournaments.persistence.entity.PlayerNotification;
 import ru.pulsecore.tournaments.persistence.repository.PlayerNotificationRepository;
 import ru.pulsecore.tournaments.service.notification.NotificationPermissionService;
+import ru.pulsecore.tournaments.service.outbox.OutBoxService;
 import ru.pulsecore.tournaments.validator.PushMessageBuilder;
 
 import java.time.LocalDate;
@@ -25,9 +25,9 @@ import java.util.stream.Collectors;
 @Component
 @RequiredArgsConstructor
 public class TournamentReminderService {
-
+    //todo добавить батчу отправлять пачка и так же сделать в получателе
     private final PlayerNotificationRepository notificationRepository;
-    private final KafkaPublisher kafkaPublisher;
+    private final OutBoxService outBoxService;
     private final NotificationPermissionService notificationPermissionService;
 
     @Transactional
@@ -70,7 +70,7 @@ public class TournamentReminderService {
         Long minutes = parseMinutesUntil(time, now);
         if (minutes == null || minutes <= 0 || minutes > 60) return;
 
-        kafkaPublisher.publish(KafkaTopics.PUSH_NOTIFICATION, new PushNotificationEvent(
+        outBoxService.save(KafkaTopics.PUSH_NOTIFICATION, new PushNotificationEvent(
                 pn.getPlayerId(),
                 "🏆 Турнир начинается!",
                 PushMessageBuilder.buildHourReminderBody(time, minutes),
@@ -93,7 +93,7 @@ public class TournamentReminderService {
     private void sendEveningReminder(PlayerNotification pn, LocalTime now) {
         if (now.getHour() != 20 || pn.isPushEveningSent()) return;
 
-        kafkaPublisher.publish(KafkaTopics.PUSH_NOTIFICATION, new PushNotificationEvent(
+        outBoxService.save(KafkaTopics.PUSH_NOTIFICATION, new PushNotificationEvent(
                 pn.getPlayerId(),
                 "📅 Завтра турнир!",
                 PushMessageBuilder.buildEveningReminderBody(pn.getTournament().getTime()),

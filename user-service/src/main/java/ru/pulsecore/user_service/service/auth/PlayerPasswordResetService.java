@@ -12,7 +12,8 @@ import ru.pulsecore.shared.dto.event.MailNotificationEvent;
 import ru.pulsecore.user_service.domain.Player;
 import ru.pulsecore.user_service.exception.player.BadResetCodeException;
 import ru.pulsecore.user_service.repository.PlayerRepository;
-import ru.pulsecore.user_service.event.publisher.KafkaEventPublisher;
+import ru.pulsecore.user_service.service.outbox.OutBoxService;
+
 
 import java.security.SecureRandom;
 import java.time.Duration;
@@ -28,13 +29,14 @@ public class PlayerPasswordResetService {
     private final PlayerRepository playerRepository;
     private final PasswordEncoder passwordEncoder;
     private final RedisTemplate<String,String> redisTemplate;
-    private final KafkaEventPublisher playerEventPublisher;
+    private final OutBoxService outBoxService;
 
+    @Transactional
     public void initiate(String email) {
         String normalizedEmail = email.toLowerCase().trim();
         String code = String.format("%06d", RANDOM.nextInt(999999));
         redisTemplate.opsForValue().set(PREFIX + normalizedEmail, code, TTL);
-        playerEventPublisher.publish(
+        outBoxService.save(
                 KafkaTopics.EMAIL_NOTIFICATION,
                 new MailNotificationEvent(
                         MailTypes.PASSWORD_RESET,

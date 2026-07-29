@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import ru.pulsecore.notification_service.service.push.WebPushService;
 import ru.pulsecore.shared.config.constants.KafkaTopics;
 import ru.pulsecore.shared.dto.event.PushNotificationEvent;
+import ru.pulsecore.shared.util.JsonUtils;
 
 @Component
 @RequiredArgsConstructor
@@ -18,7 +19,8 @@ public class PushNotificationListener {
 
 
     @KafkaListener(topics = KafkaTopics.PUSH_NOTIFICATION)
-    public void sendPush(PushNotificationEvent event) {
+    public void sendPush(String json) {
+        PushNotificationEvent event  = JsonUtils.fromJson(json, PushNotificationEvent.class);
         webPushService.sendToPlayer(
                 event.playerId(),
                 event.title(),

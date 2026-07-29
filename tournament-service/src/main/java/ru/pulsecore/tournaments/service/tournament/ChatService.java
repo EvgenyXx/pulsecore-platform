@@ -6,31 +6,44 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.pulsecore.shared.config.constants.KafkaTopics;
 import ru.pulsecore.shared.dto.event.PushNotificationEvent;
+import ru.pulsecore.shared.dto.player.PlayerSearchResponse;
 import ru.pulsecore.shared.exception.ForbiddenException;
-import ru.pulsecore.tournaments.event.KafkaPublisher;
+import ru.pulsecore.tournaments.client.PlayerClient;
 import ru.pulsecore.tournaments.exception.MessageNotFoundException;
 import ru.pulsecore.tournaments.api.dto.response.ChatMessageDto;
 import ru.pulsecore.tournaments.mapper.ChatMessageMapper;
 import ru.pulsecore.tournaments.persistence.entity.ChatMessage;
 import ru.pulsecore.tournaments.persistence.repository.ChatMessageRepository;
+import ru.pulsecore.tournaments.service.outbox.OutBoxService;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ChatService {
 
+    private static final Pattern MENTION_PATTERN = Pattern.compile("@([\\p{L}]+)\\s+([\\p{L}]+)");
+
+
     private final ChatMessageRepository chatMessageRepository;
     private final ChatMessageMapper chatMessageMapper;
-    private final KafkaPublisher kafkaPublisher;
-    private final ChatMentionService chatMentionService;
+    private final OutBoxService outBoxService;
+    private final PlayerClient searchByName;
 
 
+    public List<PlayerSearchResponse> searchPlayers(String query) {
+        if (query == null || query.isBlank()) return List.of();
+        return searchByName.searchByName(query);
+    }
 
-    @Transactional(readOnly = true)
+
     public List<ChatMessageDto> getMessages(Long lineupId) {
         return chatMessageRepository.findByLineupIdOrderByCreatedAtAsc(lineupId)
                 .stream()
@@ -59,14 +72,14 @@ public class ChatService {
 
         ChatMessage saved = chatMessageRepository.save(entity);
         ChatMessageDto result = chatMessageMapper.toDto(saved);
-        chatMentionService.processMentions(lineupId, result);
+        processMentions(lineupId, result);
 
         return result;
     }
 
     private void sendReplyPush(ChatMessage originalMsg, ChatMessageDto replyMsg) {
 
-        kafkaPublisher.publish(KafkaTopics.PUSH_NOTIFICATION,
+        outBoxService.save(KafkaTopics.PUSH_NOTIFICATION,
                 new PushNotificationEvent(
                         originalMsg.getPlayerId(),
                         "Ответ",
@@ -74,6 +87,30 @@ public class ChatService {
                         "/live/" + originalMsg.getLineupId()
 
                 ));
+    }
+
+    private void processMentions(Long lineupId, ChatMessageDto msg) {
+        if (msg.getMessage() == null) return;
+        Set<UUID> mentionedIds = new HashSet<>();
+        Matcher matcher = MENTION_PATTERN.matcher(msg.getMessage());
+
+        while (matcher.find()) {
+            String fullName = matcher.group(1) + " " + matcher.group(2);
+            UUID playerId =  searchByName.getIdByFullName(fullName);
+            if (!playerId.equals(msg.getPlayerId())) {
+                mentionedIds.add(playerId);
+            }
+
+        }
+
+        for (UUID playerId : mentionedIds) {
+            outBoxService.save(KafkaTopics.PUSH_NOTIFICATION,new PushNotificationEvent(
+                    playerId,
+                    "💬 " + msg.getPlayerName(),
+                    msg.getMessage(),
+                    "/live/" + lineupId
+            ));
+        }
     }
 
 
