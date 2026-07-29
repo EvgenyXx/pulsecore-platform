@@ -11,7 +11,8 @@ import ru.pulsecore.shared.dto.tournament.request.SumRequest;
 import ru.pulsecore.user_service.client.TournamentClient;
 import ru.pulsecore.user_service.domain.Player;
 import ru.pulsecore.user_service.domain.ScheduledReport;
-import ru.pulsecore.user_service.event.publisher.KafkaEventPublisher;
+
+import ru.pulsecore.user_service.service.outbox.OutBoxService;
 import ru.pulsecore.user_service.service.player.PlayerService;
 
 import java.time.LocalDateTime;
@@ -25,7 +26,7 @@ public class ScheduledReportProcessor {
     private final ScheduledReportService reportService;
     private final TournamentClient tournamentClient;
     private final PlayerService playerService;
-    private final KafkaEventPublisher eventPublisher;
+    private final OutBoxService outBoxService;
 
     public void sendScheduledReports() {
         List<ScheduledReport> ready = reportService.findPendingBefore(LocalDateTime.now());
@@ -47,7 +48,7 @@ public class ScheduledReportProcessor {
         }
 
         String period = report.getDateFrom() + " – " + report.getDateTo();
-        eventPublisher.publish(KafkaTopics.EMAIL_NOTIFICATION,
+        outBoxService.save(KafkaTopics.EMAIL_NOTIFICATION,
                 new MailNotificationEvent(MailTypes.SCHEDULED_REPORT,
                         new ScheduledReportContext(
                                 player.getEmail(), period,

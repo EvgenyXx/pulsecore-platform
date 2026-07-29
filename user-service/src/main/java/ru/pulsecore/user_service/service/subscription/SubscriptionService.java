@@ -17,7 +17,8 @@ import ru.pulsecore.shared.dto.event.PushNotificationEvent;
 import ru.pulsecore.user_service.domain.Player;
 import ru.pulsecore.user_service.domain.Subscription;
 import ru.pulsecore.user_service.repository.SubscriptionRepository;
-import ru.pulsecore.user_service.event.publisher.KafkaEventPublisherIml;
+
+import ru.pulsecore.user_service.service.outbox.OutBoxService;
 import ru.pulsecore.user_service.service.player.PlayerService;
 
 import java.util.List;
@@ -30,7 +31,7 @@ public class SubscriptionService {
 
     private final SubscriptionRepository subscriptionRepository;
     private final PlayerService playerService;
-    private final KafkaEventPublisherIml kafkaEventPublisherIml;
+    private final OutBoxService outBoxService;
 
 
 
@@ -96,12 +97,12 @@ public class SubscriptionService {
         subscriptionRepository.findExpiringTomorrow().forEach(sub -> {
             Player player = sub.getPlayer();
 
-            kafkaEventPublisherIml.publish(KafkaTopics.EMAIL_NOTIFICATION,
+            outBoxService.save(KafkaTopics.EMAIL_NOTIFICATION,
                     new MailNotificationEvent(MailTypes.SUBSCRIPTION_EXPIRING,
                             new SubscriptionExpiringContext(player.getEmail(), player.getName(),
                                     sub.getExpiresAt().toString())));
 
-            kafkaEventPublisherIml.publish(KafkaTopics.PUSH_NOTIFICATION,
+            outBoxService.save(KafkaTopics.PUSH_NOTIFICATION,
                     new PushNotificationEvent(player.getId(), "⏳ Подписка заканчивается!",
                             "Продлите подписку, чтобы не потерять доступ", "/subscribe"));
         });

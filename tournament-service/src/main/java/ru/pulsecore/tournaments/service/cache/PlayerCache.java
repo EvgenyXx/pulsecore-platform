@@ -26,7 +26,7 @@ public class PlayerCache {
 
     public void updateActivePlayers(List<PlayerData> activePlayers) {
         if (!activePlayers.isEmpty()) {
-            redisTemplate.opsForValue().set(ACTIVE_PLAYERS, activePlayers, Duration.ofHours(3));
+            redisTemplate.opsForValue().set(ACTIVE_PLAYERS, activePlayers);
         }
     }
 

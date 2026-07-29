@@ -30,6 +30,7 @@ public class RegistrationFacade {
     private final RedisTemplate<String, Object> redisTemplate;
     private final PostRegistrationService postRegistrationService;
 
+    @Transactional
     public void initiate(String name, String email, String rawPassword) {
         validator.validate(email, name);
         String code = codeGenerator.generate();
