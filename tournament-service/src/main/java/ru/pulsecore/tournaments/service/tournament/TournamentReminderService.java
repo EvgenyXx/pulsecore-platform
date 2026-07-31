@@ -15,10 +15,7 @@ import ru.pulsecore.tournaments.validator.PushMessageBuilder;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -45,32 +42,42 @@ public class TournamentReminderService {
         LocalDate tomorrow = today.plusDays(1);
         LocalTime now = LocalTime.now().withSecond(0).withNano(0);
 
+        List<Object>batch = new ArrayList<>();
         pending.forEach(pn -> {
             if (!canPush.getOrDefault(pn.getPlayerId(), false)) return;
-            processNotification(pn, today, tomorrow, now);
+            processNotification(pn, today, tomorrow, now,batch);
         });
+
+        if (!batch.isEmpty()) {
+            outBoxService.saveAll(KafkaTopics.PUSH_NOTIFICATION, batch);
+        }
     }
 
-    private void processNotification(PlayerNotification pn, LocalDate today, LocalDate tomorrow, LocalTime now) {
+    private void processNotification(
+            PlayerNotification pn,
+            LocalDate today,
+            LocalDate tomorrow,
+            LocalTime now,
+            List<Object>batch) {
         var tournament = pn.getTournament();
         if (tournament == null || tournament.getDate() == null) return;
 
         if (tournament.getDate().equals(today)) {
-            sendHourReminder(pn, now);
+            sendHourReminder(pn, now,batch);
         }
         if (tournament.getDate().equals(tomorrow)) {
-            sendEveningReminder(pn, now);
+            sendEveningReminder(pn, now,batch);
         }
     }
 
-    private void sendHourReminder(PlayerNotification pn, LocalTime now) {
+    private void sendHourReminder(PlayerNotification pn, LocalTime now, List<Object> batch) {
         String time = pn.getTournament().getTime();
         if (time == null || time.isEmpty()) return;
 
         Long minutes = parseMinutesUntil(time, now);
         if (minutes == null || minutes <= 0 || minutes > 60) return;
 
-        outBoxService.save(KafkaTopics.PUSH_NOTIFICATION, new PushNotificationEvent(
+        batch.add(new PushNotificationEvent(
                 pn.getPlayerId(),
                 "🏆 Турнир начинается!",
                 PushMessageBuilder.buildHourReminderBody(time, minutes),
@@ -90,10 +97,10 @@ public class TournamentReminderService {
         }
     }
 
-    private void sendEveningReminder(PlayerNotification pn, LocalTime now) {
+    private void sendEveningReminder(PlayerNotification pn, LocalTime now, List<Object> batch) {
         if (now.getHour() != 20 || pn.isPushEveningSent()) return;
 
-        outBoxService.save(KafkaTopics.PUSH_NOTIFICATION, new PushNotificationEvent(
+        batch.add(new PushNotificationEvent(
                 pn.getPlayerId(),
                 "📅 Завтра турнир!",
                 PushMessageBuilder.buildEveningReminderBody(pn.getTournament().getTime()),

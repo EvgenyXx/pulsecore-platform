@@ -10,6 +10,8 @@ import ru.pulsecore.shared.config.constants.KafkaTopics;
 import ru.pulsecore.shared.dto.event.PushNotificationEvent;
 import ru.pulsecore.shared.util.JsonUtils;
 
+import java.util.List;
+
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -18,15 +20,17 @@ public class PushNotificationListener {
     private  final WebPushService webPushService;
 
 
-    @KafkaListener(topics = KafkaTopics.PUSH_NOTIFICATION)
-    public void sendPush(String json) {
-        PushNotificationEvent event  = JsonUtils.fromJson(json, PushNotificationEvent.class);
-        webPushService.sendToPlayer(
-                event.playerId(),
-                event.title(),
-                event.body(),
-                event.url()
-        );
-        log.debug("Push notification received: {}", event);
+    @KafkaListener(topics = KafkaTopics.PUSH_NOTIFICATION,batch = "true")
+    public void sendPush(List<PushNotificationEvent> notificationEvents) {
+        log.info("ПОЛУЧЕН БАТЧ: {} писем", notificationEvents.size());
+        for (var n : notificationEvents) {
+            webPushService.sendToPlayer(
+                    n.playerId(),
+                    n.title(),
+                    n.body(),
+                    n.url()
+            );
+
+        }
     }
 }

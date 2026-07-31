@@ -30,6 +30,7 @@ public class TournamentFinishNotificationService {
 
         Map<UUID, Boolean> canPushMap = notificationPermissionService.canSendPush(playerIds);
 
+        List<Object> objects = new ArrayList<>();
         for (PlayerNotification pn : notifications) {
             if (!canPushMap.getOrDefault(pn.getPlayerId(), false)) continue;
 
@@ -39,13 +40,18 @@ public class TournamentFinishNotificationService {
 
             String time = tournament.getTime() != null ? tournament.getTime() : "?";
             String date = tournament.getDate() != null ? tournament.getDate().toString() : "?";
-            outBoxService.save(KafkaTopics.PUSH_NOTIFICATION, new PushNotificationEvent(
+            objects.add(new PushNotificationEvent(
                     pn.getPlayerId(),
                     "❌ Турнир отменён!",
                     PushMessageBuilder.buildCancelledBody(date, time),
                     "/dashboard"
             ));
         }
+
+        if (!objects.isEmpty()) {
+            outBoxService.saveAll(KafkaTopics.PUSH_NOTIFICATION, objects);
+        }
+
         log.debug("📩 Cancelled notifications: {}", notifications.size());
     }
 }

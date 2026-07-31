@@ -24,13 +24,18 @@ spring:
           auth: true
           starttls:
             enable: true
+
   kafka:
+    bootstrap-servers: localhost:9092
+    listener:
+      type: BATCH
     consumer:
+      max-poll-records: 500
       group-id: notification-service
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
-        spring.json.trusted.packages: ru.pulsecore.shared.dto.event,ru.pulsecore.shared.context,ru.pulsecore.shared.dto
+        spring.json.trusted.packages: ru.pulsecore.shared.dto.event
 
 server:
   port: 8083
