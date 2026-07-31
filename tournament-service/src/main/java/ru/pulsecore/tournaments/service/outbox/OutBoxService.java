@@ -11,6 +11,9 @@ import ru.pulsecore.tournaments.domain.OutBoxEvent;
 
 import ru.pulsecore.tournaments.persistence.repository.OutboxEventRepository;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 @Service
 @RequiredArgsConstructor
@@ -30,9 +33,26 @@ public class OutBoxService {
                     .payload(payload)
                     .build();
             outboxEventRepository.save(event);
-        }catch (Exception e) {
+        } catch (Exception e) {
             log.error("Error creating outbox event", e);
         }
+    }
 
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void saveAll(String topic, List<Object> objects) {
+       try {
+           List<OutBoxEvent> events = new ArrayList<>();
+           for (var object : objects) {
+               String payload = JsonUtils.toJson(object);
+               OutBoxEvent event = OutBoxEvent.builder()
+                       .topic(topic)
+                       .payload(payload)
+                       .build();
+               events.add(event);
+           }
+           outboxEventRepository.saveAll(events);
+       }catch (Exception e) {
+           log.error("Error creating outbox event", e);
+       }
     }
 }

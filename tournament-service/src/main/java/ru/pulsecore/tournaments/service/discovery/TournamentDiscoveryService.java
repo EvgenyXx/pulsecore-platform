@@ -1,8 +1,10 @@
 package ru.pulsecore.tournaments.service.discovery;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import ru.pulsecore.shared.config.constants.KafkaTopics;
 import ru.pulsecore.shared.config.constants.MailTypes;
 import ru.pulsecore.shared.context.NewTournamentContext;
@@ -34,20 +36,35 @@ public class TournamentDiscoveryService {
     private final PlayerClient playerClient;
     private final PlayerCache playerCache;
 
+    @Transactional
     public void checkNewTournaments() {
 
-        List<PlayerData>activePlayers = playerClient.getAllActivePlayers();
+
+        List<PlayerData> activePlayers = playerClient.getAllActivePlayers();
         playerCache.updateActivePlayers(activePlayers);
+
+
         if (activePlayers.isEmpty()) return;
 
+
         Set<String> playerNames = activePlayers.stream().map(PlayerData::name).collect(Collectors.toSet());
+
+
         Map<String, List<TournamentDto>> allFound = finder.find(playerNames);
 
+
         Set<UUID> ids = activePlayers.stream().map(PlayerData::id).collect(Collectors.toSet());
+
         Map<UUID, Boolean> canEmailMap = notificationPermissionService.canSendEmail(ids);
+
         Map<UUID, Boolean> canPushMap = notificationPermissionService.canSendPush(ids);
 
+
+        List<Object> batchEmail = new ArrayList<>();
+        List<Object> batchPush = new ArrayList<>();
         for (PlayerData player : activePlayers) {
+
+
             List<TournamentDto> playerTournaments = allFound.getOrDefault(player.name(), List.of());
             List<TournamentDto> newTournaments = filter.findNew(player.id(), playerTournaments);
             if (newTournaments.isEmpty()) continue;
@@ -57,18 +74,32 @@ public class TournamentDiscoveryService {
             boolean canEmail = canEmailMap.getOrDefault(player.id(), false);
             boolean canPush = canPushMap.getOrDefault(player.id(), false);
 
+
             for (TournamentDto t : newTournaments) {
-                sendEmailIfAllowed(player, t, canEmail);
-                sendPushIfAllowed(player, t, canPush);
+                sendEmailIfAllowed(player, t, canEmail, batchEmail);
+                sendPushIfAllowed(player, t, canPush, batchPush);
             }
-            log.info("Отправлены уведомления о {} турнирах для {}", newTournaments.size(), player.email());
+
         }
+
+        log.info("BATCH EMAIL: {} событий", batchEmail.size());
+        log.info("BATCH PUSH: {} событий", batchPush.size());
+
+        if (!batchEmail.isEmpty()) {
+            outBoxService.saveAll(KafkaTopics.EMAIL_NOTIFICATION, batchEmail);
+        }
+
+        if (!batchPush.isEmpty()) {
+            outBoxService.saveAll(KafkaTopics.PUSH_NOTIFICATION, batchPush);
+        }
+        log.info("Отправлены уведомления о {} ", batchEmail.size());
+
     }
 
-    private void sendEmailIfAllowed(PlayerData player, TournamentDto t, boolean canEmail) {
+    private void sendEmailIfAllowed(PlayerData player, TournamentDto t, boolean canEmail, List<Object> batch) {
         if (!canEmail) return;
         String rawDate = t.getDate() != null ? t.getDate().getDate() : null;
-        outBoxService.save(KafkaTopics.EMAIL_NOTIFICATION,
+        batch.add(
                 new MailNotificationEvent(MailTypes.NEW_TOURNAMENT,
                         new NewTournamentContext(
                                 player.email(),
@@ -82,9 +113,9 @@ public class TournamentDiscoveryService {
                         )));
     }
 
-    private void sendPushIfAllowed(PlayerData player, TournamentDto t, boolean canPush) {
+    private void sendPushIfAllowed(PlayerData player, TournamentDto t, boolean canPush, List<Object> batch) {
         if (!canPush) return;
-        outBoxService.save(KafkaTopics.PUSH_NOTIFICATION,
+        batch.add(
                 new PushNotificationEvent(player.id(), "📋 Вы в составе!",
                         PushMessageBuilder.buildNewTournamentBody(player.name(), t), "/dashboard"));
     }

@@ -32,11 +32,16 @@ public class UpcomingTournamentService {
         }
         return all;
     }
-
     public Map<String, List<TournamentDto>> findPlayersTournaments(Set<String> names) {
+
+
         Map<String, List<TournamentDto>> all = getAllTournamentsFor3Days();
+
+
+
         Map<String, String> normalizedNames = names.stream()
                 .collect(Collectors.toMap(StringUtils::normalizeSearch, name -> name));
+
 
         Map<String, List<TournamentDto>> result = names.stream()
                 .collect(Collectors.toMap(name -> name, name -> new ArrayList<>()));
@@ -44,17 +49,23 @@ public class UpcomingTournamentService {
         for (List<TournamentDto> dayTournaments : all.values()) {
             for (TournamentDto t : dayTournaments) {
                 if (t.getPlayers() == null) continue;
+
+
                 for (String player : t.getPlayers()) {
                     String normalized = StringUtils.normalizeSearch(player);
                     String originalName = normalizedNames.get(normalized);
+
+
                     if (originalName != null) {
                         t.setHallNumber(NumberUtils.extractInt(t.getHall()));
                         result.get(originalName).add(t);
-                        break;
+
                     }
                 }
             }
+          //todo добавить лог
         }
+
         return result;
     }
 

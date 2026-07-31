@@ -49,6 +49,9 @@ public class PlayerClientFallbackFactory implements FallbackFactory<PlayerClient
 
             @Override
             public List<PlayerData> getAllActivePlayers() {
+                if (playerCache.getActivePlayers().isEmpty()) {
+                    log.info("Кеш пустой .. Плеер серивис не доступен");
+                }
                 return playerCache.getActivePlayers();
             }
 
